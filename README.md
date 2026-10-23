@@ -9,8 +9,9 @@ Live: https://second-brain-six-swart.vercel.app (Vercel project `second-brain`, 
 `github.com/Bhuvanesh66/nexus`; every push to `main` is a production deploy, other branches get previews).
 
 - `/` the landing page, with an in-browser demo of the loop (sample data, no network calls).
-- `/auth/sign-in` → Google (Supabase Auth) → `/dashboard`: **Drop** (notes, YouTube, articles, posts on X, and
-  PDFs or text files dragged in or attached),
+- `/auth/sign-in` → Google (Supabase Auth) → `/dashboard`: **Drop** (notes, YouTube and Shorts, articles, posts
+  on X, TikTok captions, and PDFs, text files, videos and voice notes dragged in or attached; video and audio are
+  transcribed by Gemini or Groq Whisper and the originals kept privately for replay),
   **Hand off** (five output modes, cited sources, Copy, Open in Gmail) and **Your Vault** (search, details,
   connections, delete).
 - `/stats` public totals: people signed up, fragments dropped, hand-offs answered.
@@ -78,7 +79,8 @@ for the life of a Vault: vectors from different models can't be compared.
 | `app/api/captures` | Vault list, one fragment with its connections, delete. |
 | `app/stats/page.tsx` | Public totals via `nexus_stats()`. |
 | `lib/ai.ts`, `lib/prompts.ts` | AI providers, and every prompt in one place. |
-| `lib/ingest/` | YouTube transcripts, article extraction (Readability), posts on X (oEmbed), the no-AI extract. |
+| `lib/ingest/` | YouTube captions, article extraction (Readability), posts on X (oEmbed), reels, the no-AI extract. |
+| `app/api/uploads` | Signed upload links into the user's own folder of the private `uploads` bucket (video/audio, 50 MB). |
 | `supabase/migrations/` | Tables, row-level security, `match_captures`, `keyword_captures`, `nexus_stats`. |
 | `components/demo/demo-data.ts` | All demo content: stages and timings, captures, connections, the three tasks and their answers. |
 | `components/demo/demo-machine.ts` | The demo state machine (idle, playing, paused, stepped, done; task, answer view, source focus). |

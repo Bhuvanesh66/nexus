@@ -77,6 +77,17 @@ afterwards, so `/stats` starts at zero. Email sign-up is switched off in Supabas
   images and scanned PDFs get a plain explanation. PDFs are their own `pdf` source type
   (`supabase/migrations/20261024090000_pdf_captures.sql`). Verified with a 15-page PDF, a dragged link, a .txt and a .png.
 - Ink navbar with the six-hue band on the landing page, sign-in, stats and the dashboard.
+- Video and audio (Oct 24). Verified on production:
+  - YouTube when captions are refused (blocker 3 above is resolved): Gemini reads the public video on Google's
+    side. A 23-min video took 23 s; a 50-min talk took 36 s, read from its first 15 minutes at 0.5 fps.
+  - Uploads (MP4, MOV, WebM, MP3, M4A, WAV…, up to 50 MB): browser → signed upload → private `uploads` bucket
+    (per-user folder under RLS) → Gemini transcript with on-screen text and a description of what's shown (Files
+    API above 10 MB) or Groq Whisper when `GROQ_API_KEY` is set → `video`/`audio` fragment, original playable in the
+    Vault, file deleted with the fragment. 13 s MP4: 11 s; 41.7 MB MP4: 32 s; voice note: 8 s; a hand-off then
+    cited both. Migration `20261024120000_media_captures.sql`.
+  - Reels: TikTok's oEmbed caption and openly served Open Graph tags only. Instagram's terms forbid automated
+    collection, so Instagram links ask for the video file (verified: honest prompt in 2 s).
 
 ## Not built (spec §9 roadmap)
-Voice, WhatsApp, Instagram transcription, Chrome extension, OCR, multi-step execution, reminders.
+WhatsApp, Instagram link transcription (needs a separate worker or a paid API), Chrome extension, OCR,
+multi-step execution, reminders.
