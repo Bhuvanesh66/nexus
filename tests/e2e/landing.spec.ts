@@ -60,6 +60,13 @@ test.describe("landing page", () => {
     ]);
     await expect(whyNow.getByText("Until now.")).toBeAttached();
 
+    const tagline = page.getByRole("region", { name: "Stop collecting. Start remembering. Start doing." });
+    await expect(tagline.getByRole("heading", { level: 2 })).toHaveText([
+      "Stop collecting.",
+      "Start remembering.",
+      "Start doing.",
+    ]);
+
     const eras = page.locator("#eras");
     await expect(eras.getByRole("heading", { level: 3 })).toHaveText([
       "Era 1: The Mind",

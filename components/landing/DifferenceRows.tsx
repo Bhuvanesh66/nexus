@@ -33,7 +33,9 @@ export function DifferenceRows() {
   return (
     <>
       <div className={styles.row} data-reveal="" style={cssVars({ "--i": 1 })}>
-        <h3 className={styles.rowLabel}>Generic AI</h3>
+        <h3 className={styles.rowLabel} data-tone="generic">
+          Generic AI
+        </h3>
         <div className={styles.frag} data-ui="">
           <p className={styles.prompt}>{TASK.prompt}</p>
           <Email rows={TASK.generic} active={null} {...source} />
@@ -46,7 +48,9 @@ export function DifferenceRows() {
       </div>
 
       <div className={styles.row} data-reveal="" style={cssVars({ "--i": 2 })}>
-        <h3 className={styles.rowLabel}>What you dropped</h3>
+        <h3 className={styles.rowLabel} data-tone="yours">
+          What you dropped
+        </h3>
         <div className={styles.frag} data-ui="">
           <p className={styles.fragTitle} id="saved-title">
             <VaultMark size={14} />
@@ -60,6 +64,7 @@ export function DifferenceRows() {
                   <button
                     type="button"
                     className={styles.note}
+                    data-kind={capture.kind}
                     aria-pressed={selected === id}
                     data-hit={active === id ? "true" : undefined}
                     aria-describedby="saved-hint"
@@ -91,7 +96,9 @@ export function DifferenceRows() {
       </div>
 
       <div className={styles.row} data-reveal="" style={cssVars({ "--i": 3 })}>
-        <h3 className={styles.rowLabel}>Nexus</h3>
+        <h3 className={styles.rowLabel} data-tone="nexus">
+          Nexus
+        </h3>
         <div className={styles.frag} data-ui="">
           <p className={styles.prompt}>{TASK.prompt}</p>
           <Email rows={TASK.rows} active={active} {...source} />

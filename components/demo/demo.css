@@ -69,7 +69,7 @@
   display: block;
   height: 4px;
   border-radius: 999px;
-  background: var(--surface-strong);
+  background: var(--bg);
   overflow: hidden;
 }
 
@@ -80,6 +80,31 @@
   background: var(--ink);
   transform: scaleX(0);
   transform-origin: 0 50%;
+}
+
+/* one hue of the spectrum per step, so the bar fills pink to violet as the story plays */
+.sb-fill[data-step="capture"] {
+  background: var(--pink);
+}
+
+.sb-fill[data-step="understand"] {
+  background: var(--orange);
+}
+
+.sb-fill[data-step="connect"] {
+  background: var(--amber);
+}
+
+.sb-fill[data-step="ask"] {
+  background: var(--green);
+}
+
+.sb-fill[data-step="recall"] {
+  background: var(--sky);
+}
+
+.sb-fill[data-step="create"] {
+  background: var(--violet);
 }
 
 .sb-step-label {
@@ -147,7 +172,31 @@
 
 .sb-now b {
   color: var(--ink);
-  font-weight: 600;
+  font-weight: 700;
+}
+
+.sb-now > [data-now="capture"] b {
+  color: var(--pink-deep);
+}
+
+.sb-now > [data-now="understand"] b {
+  color: var(--orange-deep);
+}
+
+.sb-now > [data-now="connect"] b {
+  color: var(--amber-deep);
+}
+
+.sb-now > [data-now="ask"] b {
+  color: var(--green-deep);
+}
+
+.sb-now > [data-now="recall"] b {
+  color: var(--sky-deep);
+}
+
+.sb-now > [data-now="create"] b {
+  color: var(--accent-text);
 }
 
 .sb-now-count {
@@ -167,7 +216,7 @@
   min-height: 36px;
   padding: 0 13px 0 11px;
   border-radius: 999px;
-  background: var(--surface);
+  background: var(--bg);
   color: var(--ink);
   font-size: 13px;
   font-weight: 500;
@@ -183,7 +232,7 @@
 
 @media (hover: hover) and (pointer: fine) {
   .sb-tbtn:hover {
-    background: var(--surface-strong);
+    background: var(--surface);
   }
 }
 
@@ -227,7 +276,7 @@
   min-height: 36px;
   padding: 0 14px;
   border-radius: 999px;
-  background: var(--surface);
+  background: var(--bg);
   color: var(--ink);
   font-size: 14px;
   font-weight: 500;
@@ -244,13 +293,13 @@
 
 @media (hover: hover) and (pointer: fine) {
   .sb-task:hover {
-    background: var(--surface-strong);
+    background: var(--surface);
   }
 }
 
 .sb-task[aria-pressed="true"] {
-  background: var(--ink);
-  color: var(--bg);
+  background: var(--violet);
+  color: var(--accent-ink);
 }
 
 .sb-note {
@@ -295,10 +344,6 @@
   gap: 7px;
   font-weight: 600;
   white-space: nowrap;
-}
-
-[data-ui] .sb-appname svg {
-  color: var(--accent);
 }
 
 [data-ui] .sb-tabs {
@@ -422,6 +467,23 @@
   color: var(--ui-faint);
 }
 
+/* each kind of fragment keeps its own colour */
+[data-ui] [data-kind="youtube"] > svg {
+  color: var(--pink-deep);
+}
+
+[data-ui] [data-kind="note"] > svg {
+  color: var(--amber-deep);
+}
+
+[data-ui] [data-kind="tweet"] > svg {
+  color: var(--sky-deep);
+}
+
+[data-ui] [data-kind="article"] > svg {
+  color: var(--green-deep);
+}
+
 [data-ui] .sb-card::after {
   content: "";
   position: absolute;
@@ -454,8 +516,8 @@
 [data-ui] .sb-new {
   padding: 1px 7px;
   border-radius: 999px;
-  background: var(--ink);
-  color: var(--bg);
+  background: var(--pink);
+  color: var(--ink);
   font-size: 11px;
   font-weight: 600;
   line-height: 16px;
@@ -531,8 +593,8 @@
   min-height: 36px;
   padding: 0 16px 0 13px;
   border-radius: 999px;
-  background: var(--ink);
-  color: var(--bg);
+  background: var(--violet);
+  color: var(--accent-ink);
   font-size: 13px;
   font-weight: 600;
   transition: transform var(--t-press) var(--ease-out);
@@ -594,7 +656,7 @@
 }
 
 [data-ui] .sb-done svg {
-  color: var(--ink);
+  color: var(--green-deep);
 }
 
 [data-ui] .sb-composer {
@@ -631,7 +693,7 @@
 
 [data-ui] .sb-linktext svg {
   flex: none;
-  color: var(--ui-faint);
+  color: var(--pink-deep);
 }
 
 [data-ui] .sb-btn {
@@ -678,6 +740,10 @@
   line-height: 16px;
 }
 
+[data-ui] .sb-insight-meta svg {
+  color: var(--pink-deep);
+}
+
 [data-ui] .sb-summary {
   margin-top: 2px;
   color: var(--muted);
@@ -687,7 +753,7 @@
   margin-top: 4px;
   padding: 6px 10px;
   border-radius: 8px;
-  background: var(--ui-panel);
+  background: var(--amber-tint);
 }
 
 [data-ui] .sb-takeaway b {

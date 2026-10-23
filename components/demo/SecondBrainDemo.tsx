@@ -151,7 +151,7 @@ export function SecondBrainDemo() {
       ref={rootRef}
       id="demo"
       role="region"
-      aria-label="Nexus in action: interactive demo with sample notes"
+      aria-label="Nexus in action: interactive demo with sample fragments"
       tabIndex={-1}
       className="sb-demo"
       data-demo=""

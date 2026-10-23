@@ -4,6 +4,9 @@ import { cssVars } from "@/lib/css";
 import { SIGN_IN_HREF } from "@/lib/site";
 import styles from "./SiteFooter.module.css";
 
+/** The wordmark, one letter to each colour of the spectrum. */
+const WORDMARK = ["N", "e", "x", "u", "s"];
+
 export function SiteFooter() {
   return (
     <footer className={styles.footer}>
@@ -38,7 +41,11 @@ export function SiteFooter() {
 
         <div className={`${styles.tile} ${styles.mark}`} data-reveal="" style={cssVars({ "--i": 1 })}>
           <p className={styles.wordmark} translate="no">
-            Nexus
+            {WORDMARK.map((letter) => (
+              <span key={letter} className={styles.letter}>
+                {letter}
+              </span>
+            ))}
           </p>
         </div>
 

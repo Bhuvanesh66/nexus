@@ -1,5 +1,5 @@
 /* Three eras on one time axis, drawn like the demo's step bar: a grey track runs under the three columns and
-   each era fills it to scale in ink. The third, Nexus, is a point in the accent that begins now. */
+   each era fills it to scale in its own colour. The third, Nexus, is a point in the accent that begins now. */
 .section {
   padding: clamp(6rem, 11vw, 9.5rem) var(--margin) 0;
 }
@@ -74,8 +74,28 @@
   background: var(--accent);
 }
 
+.era[data-tone="pink"] .bar {
+  background: var(--pink);
+}
+
+.era[data-tone="sky"] .bar {
+  background: var(--sky);
+}
+
 .span {
-  font-weight: 600;
+  font-weight: 700;
+}
+
+.era[data-tone="pink"] .span {
+  color: var(--pink-deep);
+}
+
+.era[data-tone="sky"] .span {
+  color: var(--sky-deep);
+}
+
+.era[data-tone="violet"] .span {
+  color: var(--accent-text);
 }
 
 .name {

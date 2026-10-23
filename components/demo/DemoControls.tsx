@@ -95,7 +95,7 @@ export const TaskBar = memo(function TaskBar({ taskId, onTask }: TaskBarProps) {
           </button>
         ))}
       </div>
-      <span className="sb-note">Interactive demo with sample notes</span>
+      <span className="sb-note">Demo with sample fragments</span>
     </div>
   );
 });

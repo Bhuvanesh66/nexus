@@ -9,6 +9,7 @@ const ERAS = [
   {
     era: "Era 1",
     name: "The Mind",
+    tone: "pink",
     span: "200,000 years",
     scale: 1,
     text: "You remembered what you lived.",
@@ -17,6 +18,7 @@ const ERAS = [
   {
     era: "Era 2",
     name: "The Shelf",
+    tone: "sky",
     span: "5,000 years",
     scale: 5_000 / 200_000,
     text: "Books, files, Notion. You stored it, you fetched it.",
@@ -25,6 +27,7 @@ const ERAS = [
   {
     era: "Era 3",
     name: "Nexus",
+    tone: "violet",
     span: "Begins now",
     scale: 0,
     text: "The right fragment doesn’t just arrive.",
@@ -45,6 +48,7 @@ export function Eras() {
             <li
               key={era.name}
               className={styles.era}
+              data-tone={era.tone}
               data-now={era.scale === 0 ? "" : undefined}
               data-reveal=""
               style={cssVars({ "--i": i + 1 })}

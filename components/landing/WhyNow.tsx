@@ -5,18 +5,21 @@ import styles from "./WhyNow.module.css";
 const STATS = [
   {
     figure: "919%",
+    tone: "pink",
     spoken: "919 percent",
     context: "Creator economy growth in India, 2020 to early 2026.",
     source: "Indeed, 2026",
   },
   {
     figure: "80M",
+    tone: "amber",
     spoken: "80 million",
     context: "Creators in India today.",
     source: "Kalaari Capital, Creator Economy Report",
   },
   {
     figure: "$1T+",
+    tone: "green",
     spoken: "More than 1 trillion dollars",
     context: "Creator-influenced consumer spending in India by 2030.",
     source: "BCG, From Content to Commerce, 2025",
@@ -35,7 +38,13 @@ export function WhyNow() {
         </div>
         <ul className={styles.stats}>
           {STATS.map((stat, i) => (
-            <li key={stat.figure} className={styles.stat} data-reveal="" style={cssVars({ "--i": i + 1 })}>
+            <li
+              key={stat.figure}
+              className={styles.stat}
+              data-tone={stat.tone}
+              data-reveal=""
+              style={cssVars({ "--i": i + 1 })}
+            >
               <p className={styles.figure}>
                 <span aria-hidden="true">{stat.figure}</span>
                 <span className="sr-only">{stat.spoken}</span>

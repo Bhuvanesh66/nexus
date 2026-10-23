@@ -48,6 +48,11 @@
   display: block;
 }
 
+/* the word the page is about, in the first colour of the spectrum (3.1:1 on white, for type this large) */
+.tone {
+  color: var(--pink);
+}
+
 .lead {
   max-width: 30ch;
   margin-top: clamp(1.5rem, 2.8vw, 2rem);
@@ -82,7 +87,7 @@
   width: 2.25rem;
   height: 2.25rem;
   border-radius: 999px;
-  background: var(--surface);
+  background: var(--pink-tint);
   transition:
     background-color var(--t-hover) ease,
     transform var(--t-press) var(--ease-out);
@@ -98,7 +103,7 @@
   }
 
   .watch:hover .watchIcon {
-    background: var(--surface-strong);
+    background: var(--pink);
   }
 }
 
@@ -135,11 +140,40 @@
 .sourceIcons {
   display: inline-flex;
   gap: 0.55rem;
-  color: var(--muted);
 }
 
+.sourceIcons > :nth-child(1) {
+  color: var(--pink-deep);
+}
+
+.sourceIcons > :nth-child(2) {
+  color: var(--green-deep);
+}
+
+.sourceIcons > :nth-child(3) {
+  color: var(--sky-deep);
+}
+
+.sourceIcons > :nth-child(4) {
+  color: var(--amber-deep);
+}
+
+/* the working product stands on one flat field of lavender */
 .demo {
+  align-self: start;
   min-width: 0;
+  padding: clamp(14px, 1.5vw, 22px);
+  border-radius: 20px;
+  background: var(--violet-tint);
+}
+
+/* on a phone the field runs to both edges, so the product keeps the full width */
+@media (max-width: 599px) {
+  .demo {
+    margin-inline: calc(var(--margin) * -1);
+    padding: 18px var(--margin) 20px;
+    border-radius: 0;
+  }
 }
 
 @media (prefers-reduced-motion: no-preference) {

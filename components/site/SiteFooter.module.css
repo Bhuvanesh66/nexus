@@ -1,5 +1,5 @@
-/* The close is the last two rows of a board of filled tiles, every cell used. The accent tile carries the
-   closing line and the last primary action. */
+/* The close is the last two rows of a board of filled tiles, every cell used and each in a colour of the
+   spectrum. The accent tile carries the closing line and the last primary action. */
 .footer {
   padding: var(--section) var(--margin) var(--margin);
 }
@@ -27,16 +27,19 @@
 
 .scope {
   grid-area: scope;
+  background: var(--amber-tint);
 }
 
 .nav {
   grid-area: nav;
   justify-content: flex-start;
+  background: var(--sky-tint);
 }
 
 .event {
   grid-area: event;
   justify-content: flex-end;
+  background: var(--pink-tint);
 }
 
 .mark {
@@ -99,6 +102,26 @@
   line-height: 1;
   letter-spacing: -0.06em;
   white-space: nowrap;
+}
+
+.letter:nth-child(1) {
+  color: var(--pink);
+}
+
+.letter:nth-child(2) {
+  color: var(--orange);
+}
+
+.letter:nth-child(3) {
+  color: var(--amber);
+}
+
+.letter:nth-child(4) {
+  color: var(--green);
+}
+
+.letter:nth-child(5) {
+  color: var(--sky);
 }
 
 .ctaHeading {

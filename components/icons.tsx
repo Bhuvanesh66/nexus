@@ -24,21 +24,18 @@ function Icon({ size = 16, children, ...rest }: IconProps) {
 }
 
 /**
- * The Nexus mark: an N on an accent tile, two uprights joined where they meet. Used beside the name.
- * Filled, so it reads at 16px as well as in the favicon (app/icon.svg draws the same shape).
+ * The Nexus mark: an N on an ink tile, drawn in three colours of the spectrum. The two uprights (pink, sky) are
+ * what you know and what you are doing; the amber diagonal is where they meet. Same shape as app/icon.svg.
  */
 export function NexusMark({ size = 20, ...rest }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true" focusable="false" {...rest}>
-      <rect width="24" height="24" rx="6" fill="currentColor" />
-      <path
-        d="M8 16.5v-9l8 9v-9"
-        fill="none"
-        stroke="#fff"
-        strokeWidth="2.4"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
+      <rect width="24" height="24" rx="6" fill="#111111" />
+      <g fill="none" strokeWidth="3" strokeLinecap="round">
+        <path d="M7.5 17V7" stroke="#ff4f8b" />
+        <path d="M16.5 17V7" stroke="#2e9bff" />
+        <path d="M7.5 7l9 10" stroke="#ffc21a" />
+      </g>
     </svg>
   );
 }

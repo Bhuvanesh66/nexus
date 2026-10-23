@@ -82,6 +82,7 @@ function CaptureCard({ capture, recallIndex, hit, pressed, onHover, onSelect }: 
       type="button"
       className="sb-card"
       data-capture-id={capture.id}
+      data-kind={capture.kind}
       data-recalled={recalled}
       data-hit={hit ? "true" : undefined}
       aria-pressed={pressed}

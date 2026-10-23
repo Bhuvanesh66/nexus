@@ -1,5 +1,5 @@
-/* Why now: a field of ink between the white hero and the grey comparison. The claim top-left, three
-   figures at display size across the 12 columns, and the turn ("Until now.") answering from the right. */
+/* Why now: a field of ink after the hero. The claim top-left, three figures at display size in three colours of
+   the spectrum, and the turn ("Until now.") answering from the right, straight above the tagline's stripes. */
 .section {
   margin-top: clamp(4.5rem, 9vw, 8rem);
   padding: clamp(5rem, 9vw, 8.5rem) var(--margin);
@@ -54,6 +54,18 @@
   letter-spacing: -0.055em;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
+}
+
+.stat[data-tone="pink"] .figure {
+  color: var(--pink);
+}
+
+.stat[data-tone="amber"] .figure {
+  color: var(--amber);
+}
+
+.stat[data-tone="green"] .figure {
+  color: var(--green);
 }
 
 .context {

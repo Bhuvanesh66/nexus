@@ -1,7 +1,12 @@
 /*
  * Nexus landing page: tokens and base styles.
- * Brand (product spec 6.3): white ground, #111 ink, one indigo accent (--accent), the system font stack,
+ * Brand: white ground, #111 ink, the indigo accent (--accent) for the primary action, the system font stack,
  * rounded 8px controls, no gradients. Every colour downstream references these tokens.
+ *
+ * Colour has one meaning on this page: what comes from you and from Nexus is in colour; generic AI stays grey.
+ * The spectrum runs pink → orange → amber → green → sky → violet, one hue per step of the loop. Each hue has
+ * a vivid value (fills, very large type, type on ink), a deep value (type on white and on tints, 4.5:1 or
+ * more) and a tint (fields).
  */
 :root {
   color-scheme: light;
@@ -29,6 +34,26 @@
   /* text on the ink field */
   --on-ink: #ffffff;
   --on-ink-muted: #a7abb4;
+
+  /* the spectrum */
+  --pink: #ff4f8b;
+  --pink-deep: #c2185b;
+  --pink-tint: #ffe3ee;
+  --orange: #ff7a1a;
+  --orange-deep: #b4470a;
+  --orange-tint: #ffe8d6;
+  --amber: #ffc21a;
+  --amber-deep: #8a5a00;
+  --amber-tint: #fff3c9;
+  --green: #16c47f;
+  --green-deep: #047857;
+  --green-tint: #d6f6e8;
+  --sky: #2e9bff;
+  --sky-deep: #0b5fb0;
+  --sky-tint: #dcedff;
+  --violet: #4f46e5; /* taste-skill-ignore: the brand's indigo, also the last hue of the spectrum */
+  --violet-light: #8f80ff;
+  --violet-tint: #eae7ff;
 
   --font-text: -apple-system, BlinkMacSystemFont, "Segoe UI Variable Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
   --font-display: -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;

@@ -17,7 +17,9 @@ export function Hero() {
             {HEADLINE.map((line, i) => (
               <span key={line} className={styles.line}>
                 {i > 0 ? " " : null}
-                <span style={cssVars({ "--i": i })}>{line}</span>
+                <span className={i === 1 ? styles.tone : undefined} style={cssVars({ "--i": i })}>
+                  {line}
+                </span>
               </span>
             ))}
           </h1>
