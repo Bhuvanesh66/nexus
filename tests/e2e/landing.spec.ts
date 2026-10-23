@@ -66,10 +66,10 @@ test.describe("landing page", () => {
     ]);
     await expect(whyNow.getByText("Until now.")).toBeAttached();
 
-    const tagline = page.getByRole("region", { name: /^Stop collecting\. Start remembering\./ });
+    const tagline = page.getByRole("region", { name: /^Stop collecting\. Beyond memory\./ });
     await expect(tagline.getByRole("heading", { level: 2 })).toHaveText([
       "Stop collecting.",
-      "Start remembering.",
+      "Beyond memory.",
       "Start learning.",
       "Start doing.",
     ]);

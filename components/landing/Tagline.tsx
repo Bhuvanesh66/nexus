@@ -3,9 +3,9 @@ import styles from "./Tagline.module.css";
 
 /**
  * The tagline as stripes of colour, the answer to "Until now." above it. After the drop, the stripes are the
- * three layers of Nexus, built from the floor up: it remembers, it learns on top of memory, and it acts on top
- * of that. Memory is where most tools stop; the two layers above it are the difference, and what "beyond
- * memory" means.
+ * three layers of Nexus under the brand line "Beyond memory.": it remembers, it learns on top of memory, and it
+ * acts on top of that. Memory is where most tools stop; the two layers above it are the
+ * difference, and what "beyond memory" means.
  */
 const LINES = [
   {
@@ -15,7 +15,7 @@ const LINES = [
     note: "Drop a reel, a link or a voice note once. Nexus absorbs it.",
   },
   {
-    line: "Start remembering.",
+    line: "Beyond memory.",
     tone: "sky",
     layer: 1,
     label: "Layer 1 · Memory",
@@ -65,7 +65,7 @@ export function Tagline() {
   return (
     <section
       className={styles.tagline}
-      aria-label="Stop collecting. Start remembering. Start learning. Start doing. Beyond memory."
+      aria-label="Stop collecting. Beyond memory. Start learning. Start doing."
     >
       {LINES.map((item) => (
         <div key={item.line} className={styles.stripe} data-tone={item.tone}>
