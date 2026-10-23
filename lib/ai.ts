@@ -3,7 +3,8 @@
  *
  * Text, first one configured wins:
  *   ANTHROPIC_API_KEY  → Claude (Haiku 5.5 fast, Sonnet 5.5 smart)
- *   GEMINI_API_KEY     → Gemini (latest Flash-Lite fast, latest Flash smart; GEMINI_MODEL_FAST / _SMART override)
+ *   GEMINI_API_KEY     → Gemini (latest Flash-Lite for both, latest Flash as the stand-in when it is busy;
+ *                        GEMINI_MODEL_FAST / GEMINI_MODEL_SMART override)
  *   AI Gateway         → Claude through Vercel AI Gateway
  * Embeddings, first one configured wins. Keep one provider for the life of a Vault: vectors from different
  * models can't be compared, so switching means re-embedding.
@@ -30,7 +31,8 @@ const EMBEDDING_DIMENSIONS = 1536;
 type GeminiSlot = ModelTier | "embed";
 const GEMINI_DEFAULTS: Record<GeminiSlot, string> = {
   fast: process.env.GEMINI_MODEL_FAST || "gemini-flash-lite-latest",
-  smart: process.env.GEMINI_MODEL_SMART || "gemini-flash-latest",
+  // Flash-Lite answers hand-offs in seconds and writes them well; Flash was often too busy to answer in time.
+  smart: process.env.GEMINI_MODEL_SMART || "gemini-flash-lite-latest",
   embed: process.env.GEMINI_EMBEDDING_MODEL || "gemini-embedding-001",
 };
 // Learned per server instance: the model that answered for each slot, and settings a model refused.
@@ -38,6 +40,7 @@ const geminiModels: Partial<Record<GeminiSlot, string>> = {};
 const geminiNoThinkingConfig = new Set<string>();
 const geminiNoJsonMode = new Set<string>();
 const geminiBusyUntil = new Map<string, number>();
+const GEMINI_STAND_IN = "gemini-flash-latest";
 const OWN_MODEL_MS = 20_000;
 const BUSY_MS = 5 * 60_000;
 
@@ -221,18 +224,22 @@ async function gemini(
   signal: AbortSignal,
 ) {
   const key = process.env.GEMINI_API_KEY as string;
-  const other: ModelTier = slot === "fast" ? "smart" : "fast";
   const canStandIn = method === "generateContent";
   let model = geminiModels[slot] ?? GEMINI_DEFAULTS[slot];
+  // The other tier's model stands in; when both tiers use the same model, Flash and Flash-Lite cover each other.
+  const otherTier = geminiModels[slot === "fast" ? "smart" : "fast"] ?? GEMINI_DEFAULTS[slot === "fast" ? "smart" : "fast"];
+  const standInFor = (busy: string) =>
+    otherTier !== busy ? otherTier : busy === GEMINI_STAND_IN ? GEMINI_DEFAULTS.fast : GEMINI_STAND_IN;
   let standIn = false;
   if (canStandIn && (geminiBusyUntil.get(model) ?? 0) > Date.now()) {
-    model = geminiModels[other] ?? GEMINI_DEFAULTS[other];
+    model = standInFor(model);
     standIn = true;
   }
   const handOff = (why: string) => {
-    console.warn(`Gemini ${model} is busy (${why}); the ${other} model takes ${slot} calls for a while`);
+    const next = standInFor(model);
+    console.warn(`Gemini ${model} is busy (${why}); ${next} takes ${slot} calls for a while`);
     geminiBusyUntil.set(model, Date.now() + BUSY_MS);
-    model = geminiModels[other] ?? GEMINI_DEFAULTS[other];
+    model = next;
     standIn = true;
   };
 
