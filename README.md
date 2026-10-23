@@ -43,11 +43,11 @@ Copy `.env.example` to `.env.local` (or `vercel env pull .env.local`).
 | --- | --- | --- |
 | Supabase project `nexus` (`okiivqojobjwrbncozuf`, Mumbai) | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` on Vercel | Live; schema from `supabase/migrations/` |
 | Google sign-in | Supabase dashboard → Authentication → Sign In / Providers → Google | Live |
-| Claude (Haiku 5.5 to summarise, Sonnet 5.5 to write) | `ANTHROPIC_API_KEY`, or `AI_GATEWAY_API_KEY` | Not set yet |
-| Embeddings (`text-embedding-3-small`, 1536-d) | `OPENAI_API_KEY`, or `AI_GATEWAY_API_KEY` | Not set yet |
+| Text model: Gemini Flash-Lite (Flash stands in when busy), or Claude | `GEMINI_API_KEY` (or `ANTHROPIC_API_KEY`, `AI_GATEWAY_API_KEY`) | Live with Gemini (Production) |
+| Embeddings: `gemini-embedding-001` at 1536-d, or `text-embedding-3-small` | `GEMINI_API_KEY` (or `OPENAI_API_KEY`) | Live with Gemini (Production) |
 
-Without Claude, drops are saved with a plain extract labelled "Basic summary" and connections are matched by
-shared keywords (and say so); Hand off shows the fragments it would use but does not write. Without
+Without a text model, drops are saved with a plain extract labelled "Basic summary" and connections are matched
+by shared keywords (and say so); Hand off shows the fragments it would use but does not write. Without
 embeddings, retrieval uses the keyword backup only.
 
 **Turn on Google sign-in**
@@ -58,9 +58,9 @@ embeddings, retrieval uses the keyword backup only.
 3. Supabase dashboard → project `nexus` → Authentication → Sign In / Providers → Google: enable, paste the client
    ID and secret, save. The site URL and redirect allow-list are already set (`supabase/config.toml`).
 
-**Turn on the AI**: in Vercel → project `second-brain` → Settings → Environment Variables, add
-`ANTHROPIC_API_KEY` and `OPENAI_API_KEY` (Production and Preview), then redeploy. Or add a card to the Vercel team
-and set `AI_GATEWAY_API_KEY` (one key for both).
+**AI**: `GEMINI_API_KEY` is set for Production. To use the AI on preview deployments or locally, add it to Preview
+and Development too (not marked Sensitive, which Vercel doesn't allow in Development). Keep one embedding provider
+for the life of a Vault: vectors from different models can't be compared.
 
 **Database changes**: add a file to `supabase/migrations/`, then `supabase db push` (the CLI is linked to
 `nexus`).
