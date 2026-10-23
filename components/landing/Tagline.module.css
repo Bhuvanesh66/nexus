@@ -1,5 +1,6 @@
-/* Three full-width stripes of colour, straight after the ink of Why now. Each line is set at display size
-   on the left; its two steps and what they do sit at the right, on the line's last baseline. */
+/* Full-width stripes of colour, straight after the ink of Why now: the drop, then the three layers of Nexus,
+   each a shade deeper (memory, learning, execution). Each line is set at display size on the left; its label
+   and what it does sit at the right, on the line's last baseline. */
 .tagline {
   display: grid;
 }
@@ -19,6 +20,10 @@
 
 .stripe[data-tone="sky"] {
   background: var(--sky);
+}
+
+.stripe[data-tone="blue"] {
+  background: var(--blue);
 }
 
 .stripe[data-tone="indigo"] {
@@ -44,7 +49,19 @@
   line-height: 1.45;
 }
 
-.note b {
+.label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+}
+
+.glyph {
+  flex: none;
+}
+
+/* the sentence that marks the difference: where other tools stop, and what that makes Nexus */
+.turn {
   font-weight: 700;
 }
 
@@ -52,6 +69,11 @@
   .line,
   .note {
     grid-column: 1 / -1;
+  }
+
+  /* stacked, each stripe gets more air, so a stripe's last line never reads as a label for the next heading */
+  .stripe {
+    padding-block: clamp(3rem, 8vw, 4.5rem);
   }
 
   .line {
