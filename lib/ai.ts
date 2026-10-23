@@ -221,7 +221,7 @@ export function transcriptionConfigured() {
  * work from servers YouTube refuses captions to.
  */
 export async function transcribe(source: MediaSource, signal?: AbortSignal): Promise<string> {
-  const timeout = AbortSignal.timeout(100_000);
+  const timeout = AbortSignal.timeout(170_000);
   const abort = signal ? AbortSignal.any([signal, timeout]) : timeout;
   const audio = source.kind === "file" && source.mime.startsWith("audio/");
   let lastError: unknown = null;
@@ -247,20 +247,9 @@ export async function transcribe(source: MediaSource, signal?: AbortSignal): Pro
 
 async function geminiTranscribe(source: MediaSource, audio: boolean, signal: AbortSignal) {
   const key = process.env.GEMINI_API_KEY as string;
-  let media: Record<string, unknown>;
   let uploaded: string | null = null;
-  if (source.kind === "youtube") {
-    // Read on Google's side (public videos only); low media resolution keeps long videos quick and affordable.
-    media = { fileData: { fileUri: source.url } };
-  } else if (source.bytes.byteLength <= INLINE_MAX_BYTES) {
-    media = { inlineData: { mimeType: source.mime, data: Buffer.from(source.bytes).toString("base64") } };
-  } else {
-    const file = await geminiUpload(source, key, signal);
-    uploaded = file.name;
-    media = { fileData: { fileUri: file.uri, mimeType: source.mime } };
-  }
 
-  try {
+  const run = async (media: Record<string, unknown>) => {
     const res = await gemini(
       "fast",
       "generateContent",
@@ -272,7 +261,8 @@ async function geminiTranscribe(source: MediaSource, audio: boolean, signal: Abo
         },
       }),
       signal,
-      { ownModelMs: 60_000 },
+      // Long media is slow by nature: wait longer, and don't bench the model for it.
+      { ownModelMs: 80_000, standInOnTimeout: false },
     );
     const body = res as { candidates?: { content?: { parts?: { text?: string; thought?: boolean }[] } }[] };
     const text = (body.candidates?.[0]?.content?.parts ?? [])
@@ -282,6 +272,26 @@ async function geminiTranscribe(source: MediaSource, audio: boolean, signal: Abo
       .trim();
     if (!text) throw new AiError("Gemini returned no transcript.", "failed");
     return text;
+  };
+
+  try {
+    if (source.kind === "youtube") {
+      // Read on Google's side (public videos only). The first 15 minutes at a frame every two seconds keeps
+      // long talks quick; if the API refuses those settings, read the video as it is.
+      const video = { fileData: { fileUri: source.url } };
+      try {
+        return await run({ ...video, videoMetadata: { endOffset: "900s", fps: 0.5 } });
+      } catch (error) {
+        if (error instanceof AiError && /returned 400/.test(error.message)) return await run(video);
+        throw error;
+      }
+    }
+    if (source.bytes.byteLength <= INLINE_MAX_BYTES) {
+      return await run({ inlineData: { mimeType: source.mime, data: Buffer.from(source.bytes).toString("base64") } });
+    }
+    const file = await geminiUpload(source, key, signal);
+    uploaded = file.name;
+    return await run({ fileData: { fileUri: file.uri, mimeType: source.mime } });
   } finally {
     if (uploaded) {
       // Files expire after 48 hours anyway; this just tidies up straight away.
@@ -386,7 +396,7 @@ async function gemini(
   method: "generateContent" | "embedContent",
   body: (model: string) => unknown,
   signal: AbortSignal,
-  { ownModelMs = OWN_MODEL_MS }: { ownModelMs?: number } = {},
+  { ownModelMs = OWN_MODEL_MS, standInOnTimeout = true }: { ownModelMs?: number; standInOnTimeout?: boolean } = {},
 ) {
   const key = process.env.GEMINI_API_KEY as string;
   const canStandIn = method === "generateContent";
@@ -415,7 +425,7 @@ async function gemini(
     try {
       res = await send(`${GEMINI_URL}/${model}:${method}`, { "x-goog-api-key": key }, body(model), attemptSignal);
     } catch (error) {
-      if (canStandIn && !standIn && !signal.aborted) {
+      if (canStandIn && !standIn && !signal.aborted && standInOnTimeout) {
         handOff("no answer in time");
         continue;
       }

@@ -21,8 +21,8 @@ import { connectionsPrompt, summarisePrompt } from "@/lib/prompts";
 import { getSession } from "@/lib/supabase/server";
 import { SUMMARY_COLUMNS, toSummary, type CaptureType, type Connection } from "@/lib/vault";
 
-// Room for one retry of a slow model call (Vercel allows up to 300 s with Fluid compute).
-export const maxDuration = 120;
+// Room for a long video plus one retry of a slow model call (Vercel allows up to 300 s with Fluid compute).
+export const maxDuration = 200;
 
 const MAX_INPUT = 10_000;
 const MAX_FOR_CLAUDE = 15_000;
