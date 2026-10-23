@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { AiError, claudeConfigured, complete, embed, embeddingsConfigured, parseJson, withRetry } from "@/lib/ai";
+import { AiError, aiConfigured, complete, embed, embeddingsConfigured, parseJson, withRetry } from "@/lib/ai";
 import { fail, SIGNED_OUT } from "@/lib/http";
 import { fetchArticle } from "@/lib/ingest/article";
 import { basicSummary } from "@/lib/ingest/basic";
@@ -40,7 +40,7 @@ function toDocument(value: unknown) {
   };
 }
 
-/** Checks Claude's JSON against the 8.1 contract; null when it does not hold. */
+/** Checks the model's JSON against the 8.1 contract; null when it does not hold. */
 function toMeta(value: unknown): Meta | null {
   if (!value || typeof value !== "object") return null;
   const v = value as Record<string, unknown>;
@@ -56,8 +56,8 @@ function toMeta(value: unknown): Meta | null {
 }
 
 /**
- * Drop → Absorb → Connect. Detects the source, fetches it, has Claude summarise it (8.1), embeds the summary,
- * finds the nearest fragments the user already has, has Claude confirm which are genuinely related (8.2),
+ * Drop → Absorb → Connect. Detects the source, fetches it, has the model summarise it (8.1), embeds the summary,
+ * finds the nearest fragments the user already has, has the model confirm which are genuinely related (8.2),
  * and saves the capture with its links. Every query runs as the signed-in user, so RLS scopes it to them.
  */
 export async function POST(request: Request) {
@@ -151,22 +151,23 @@ export async function POST(request: Request) {
     }
   }
 
-  // Absorb: Claude summarises (8.1). Without Claude, a plain extract is saved and labelled as such.
+  // Absorb: the model summarises (8.1). Without one, a plain extract is saved and labelled as such.
   let meta: Meta | null = null;
-  if (claudeConfigured()) {
+  if (aiConfigured()) {
     try {
       meta = await withRetry(async () => {
         const reply = await complete({
           prompt: summarisePrompt({ content: raw.slice(0, MAX_FOR_CLAUDE), type, sourceUrl }),
           tier: "fast",
           maxTokens: 1000,
+          json: true,
         });
         const parsed = toMeta(parseJson(reply));
-        if (!parsed) throw new AiError("Claude's summary was not valid JSON.", "failed");
+        if (!parsed) throw new AiError("The summary was not valid JSON.", "failed");
         return parsed;
       });
     } catch {
-      notices.push("Claude didn’t respond, so this was saved with a basic summary.");
+      notices.push("Nexus’s AI didn’t respond, so this was saved with a basic summary.");
     }
   }
   const summarySource = meta ? "ai" : "basic";
@@ -208,11 +209,11 @@ export async function POST(request: Request) {
   }
 
   let connections: Connection[] = [];
-  if (candidates.length && summarySource === "ai" && claudeConfigured()) {
-    // 8.2: Claude decides which candidates are genuinely related. Only those are saved.
+  if (candidates.length && summarySource === "ai" && aiConfigured()) {
+    // 8.2: the model decides which candidates are genuinely related. Only those are saved.
     try {
       const reply = await withRetry(() =>
-        complete({ prompt: connectionsPrompt(meta, candidates), tier: "fast", maxTokens: 800 }),
+        complete({ prompt: connectionsPrompt(meta, candidates), tier: "fast", maxTokens: 800, json: true }),
       );
       const verdicts = parseJson(reply);
       if (Array.isArray(verdicts)) {
@@ -228,7 +229,7 @@ export async function POST(request: Request) {
       notices.push("Nexus couldn’t check connections this time.");
     }
   } else if (candidates.length) {
-    // Without Claude: only fragments that share an exact keyword or name, and the reason says so.
+    // Without a model: only fragments that share an exact keyword or name, and the reason says so.
     const mine = new Set([...meta.keywords, ...meta.entities].map((t) => t.toLowerCase()));
     connections = candidates.flatMap((c) => {
       const shared = [...new Set([...c.keywords, ...c.entities].map((t) => t.toLowerCase()))].filter((t) => mine.has(t));

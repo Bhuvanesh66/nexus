@@ -1,14 +1,22 @@
 /**
- * The two AI calls Nexus makes: Claude for text, OpenAI text-embedding-3-small (1536 dimensions) for vectors.
+ * The two AI calls Nexus makes: a language model for text, and an embedding model for 1536-dimension vectors.
  *
- * Providers, first one configured wins:
- *   Claude      ANTHROPIC_API_KEY → Anthropic Messages API; else Vercel AI Gateway
- *   Embeddings  OPENAI_API_KEY    → OpenAI; else Vercel AI Gateway
- * The gateway is used with AI_GATEWAY_API_KEY, or with the deployment's OIDC token when AI_GATEWAY_USE_OIDC=1
- * (the team needs a card on file for the gateway either way). Keys are read on the server only.
+ * Text, first one configured wins:
+ *   ANTHROPIC_API_KEY  → Claude (Haiku 5.5 fast, Sonnet 5.5 smart)
+ *   GEMINI_API_KEY     → Gemini (latest Flash-Lite fast, latest Flash smart; GEMINI_MODEL_FAST / _SMART override)
+ *   AI Gateway         → Claude through Vercel AI Gateway
+ * Embeddings, first one configured wins. Keep one provider for the life of a Vault: vectors from different
+ * models can't be compared, so switching means re-embedding.
+ *   GEMINI_API_KEY     → gemini-embedding-001 at 1536 dimensions (GEMINI_EMBEDDING_MODEL overrides)
+ *   OPENAI_API_KEY     → text-embedding-3-small (1536)
+ *   AI Gateway         → openai/text-embedding-3-small
+ * The gateway is used with AI_GATEWAY_API_KEY, or with the deployment's OIDC token when AI_GATEWAY_USE_OIDC=1.
+ * Keys are read on the server only.
  */
 
 export type ModelTier = "fast" | "smart";
+/** What a vector is for: stored fragments are documents, a task is a query (Gemini embeds them differently). */
+export type EmbedPurpose = "document" | "query";
 
 const ANTHROPIC_MODELS: Record<ModelTier, string> = { fast: "claude-haiku-5-5", smart: "claude-sonnet-5-5" };
 const GATEWAY_MODELS: Record<ModelTier, string> = {
@@ -16,7 +24,18 @@ const GATEWAY_MODELS: Record<ModelTier, string> = {
   smart: "anthropic/claude-sonnet-5.5",
 };
 const GATEWAY_URL = "https://ai-gateway.vercel.sh/v1";
+const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models";
 const EMBEDDING_DIMENSIONS = 1536;
+
+type GeminiSlot = ModelTier | "embed";
+const GEMINI_DEFAULTS: Record<GeminiSlot, string> = {
+  fast: process.env.GEMINI_MODEL_FAST || "gemini-flash-lite-latest",
+  smart: process.env.GEMINI_MODEL_SMART || "gemini-flash-latest",
+  embed: process.env.GEMINI_EMBEDDING_MODEL || "gemini-embedding-001",
+};
+// Learned per server instance: the model that answered for each slot, and models that refuse a thinking budget.
+const geminiModels: Partial<Record<GeminiSlot, string>> = {};
+const geminiNoThinkingConfig = new Set<string>();
 
 export class AiError extends Error {
   constructor(
@@ -33,24 +52,26 @@ function gatewayToken() {
   return undefined;
 }
 
-export function claudeConfigured() {
-  return Boolean(process.env.ANTHROPIC_API_KEY || gatewayToken());
+export function aiConfigured() {
+  return Boolean(process.env.ANTHROPIC_API_KEY || process.env.GEMINI_API_KEY || gatewayToken());
 }
 
 export function embeddingsConfigured() {
-  return Boolean(process.env.OPENAI_API_KEY || gatewayToken());
+  return Boolean(process.env.GEMINI_API_KEY || process.env.OPENAI_API_KEY || gatewayToken());
 }
 
-/** One Claude completion; returns the text. Throws AiError. */
+/** One completion; returns the text. `json` asks for a JSON-only reply where the provider supports it. */
 export async function complete({
   prompt,
   tier,
   maxTokens,
+  json = false,
   signal,
 }: {
   prompt: string;
   tier: ModelTier;
   maxTokens: number;
+  json?: boolean;
   signal?: AbortSignal;
 }): Promise<string> {
   const timeout = AbortSignal.timeout(tier === "smart" ? 50_000 : 30_000);
@@ -66,12 +87,41 @@ export async function complete({
     );
     const body = res as { content?: { type: string; text?: string }[] };
     const text = body.content?.find((part) => part.type === "text")?.text;
-    if (!text) throw new AiError("Claude returned no text.", "failed");
+    if (!text) throw new AiError("The model returned no text.", "failed");
+    return text;
+  }
+
+  if (process.env.GEMINI_API_KEY) {
+    const res = await gemini(
+      tier,
+      "generateContent",
+      (model) => ({
+        contents: [{ role: "user", parts: [{ text: prompt }] }],
+        generationConfig: {
+          // The ceiling leaves room for thinking, which Gemini counts as output.
+          maxOutputTokens: maxTokens + 4096,
+          ...(json ? { responseMimeType: "application/json" } : {}),
+          // Summaries skip thinking for speed; hand-offs think a little. Models that refuse this get none.
+          ...(geminiNoThinkingConfig.has(model)
+            ? {}
+            : { thinkingConfig: { thinkingBudget: tier === "fast" ? 0 : 1024 } }),
+        },
+      }),
+      abort,
+    );
+    const body = res as {
+      candidates?: { content?: { parts?: { text?: string; thought?: boolean }[] }; finishReason?: string }[];
+    };
+    const text = (body.candidates?.[0]?.content?.parts ?? [])
+      .filter((p) => !p.thought && p.text)
+      .map((p) => p.text)
+      .join("");
+    if (!text) throw new AiError(`Gemini returned no text (${body.candidates?.[0]?.finishReason ?? "no candidate"}).`, "failed");
     return text;
   }
 
   const token = gatewayToken();
-  if (!token) throw new AiError("No Claude provider is configured.", "not-configured");
+  if (!token) throw new AiError("No AI provider is configured.", "not-configured");
   const res = await post(
     `${GATEWAY_URL}/chat/completions`,
     { authorization: `Bearer ${token}` },
@@ -79,41 +129,57 @@ export async function complete({
     abort,
   );
   const text = (res as { choices?: { message?: { content?: string } }[] }).choices?.[0]?.message?.content;
-  if (!text) throw new AiError("Claude returned no text.", "failed");
+  if (!text) throw new AiError("The model returned no text.", "failed");
   return text;
 }
 
 /** One embedding vector for the text. Throws AiError. */
-export async function embed(text: string, signal?: AbortSignal): Promise<number[]> {
+export async function embed(
+  text: string,
+  { purpose = "document", signal }: { purpose?: EmbedPurpose; signal?: AbortSignal } = {},
+): Promise<number[]> {
   const input = text.slice(0, 8000);
   const timeout = AbortSignal.timeout(20_000);
   const abort = signal ? AbortSignal.any([signal, timeout]) : timeout;
 
-  let res: unknown;
-  if (process.env.OPENAI_API_KEY) {
-    res = await post(
+  let vector: number[] | undefined;
+  if (process.env.GEMINI_API_KEY) {
+    const res = await gemini(
+      "embed",
+      "embedContent",
+      () => ({
+        content: { parts: [{ text: input }] },
+        taskType: purpose === "query" ? "RETRIEVAL_QUERY" : "RETRIEVAL_DOCUMENT",
+        outputDimensionality: EMBEDDING_DIMENSIONS,
+      }),
+      abort,
+    );
+    vector = (res as { embedding?: { values?: number[] } }).embedding?.values;
+  } else if (process.env.OPENAI_API_KEY) {
+    const res = await post(
       "https://api.openai.com/v1/embeddings",
       { authorization: `Bearer ${process.env.OPENAI_API_KEY}` },
       { model: "text-embedding-3-small", input },
       abort,
     );
+    vector = (res as { data?: { embedding?: number[] }[] }).data?.[0]?.embedding;
   } else {
     const token = gatewayToken();
     if (!token) throw new AiError("No embedding provider is configured.", "not-configured");
-    res = await post(
+    const res = await post(
       `${GATEWAY_URL}/embeddings`,
       { authorization: `Bearer ${token}` },
       { model: "openai/text-embedding-3-small", input },
       abort,
     );
+    vector = (res as { data?: { embedding?: number[] }[] }).data?.[0]?.embedding;
   }
 
-  const vector = (res as { data?: { embedding?: number[] }[] }).data?.[0]?.embedding;
   if (!vector || vector.length !== EMBEDDING_DIMENSIONS) throw new AiError("The embedding came back malformed.", "failed");
   return vector;
 }
 
-/** Retries a call once, as the spec asks for Claude errors and timeouts. */
+/** Retries a call once, as the spec asks for model errors and timeouts. */
 export async function withRetry<T>(call: () => Promise<T>): Promise<T> {
   try {
     return await call();
@@ -137,10 +203,76 @@ export function parseJson(text: string): unknown {
   }
 }
 
-async function post(url: string, headers: Record<string, string>, body: unknown, signal: AbortSignal) {
-  let res: Response;
+/**
+ * One Gemini call that heals itself: if the model isn't available to this key (404), it asks Google which
+ * models are and takes the newest that fits the slot; if the model refuses the thinking setting (400), it
+ * drops the setting. Both lessons are kept for the life of the server instance.
+ */
+async function gemini(
+  slot: GeminiSlot,
+  method: "generateContent" | "embedContent",
+  body: (model: string) => unknown,
+  signal: AbortSignal,
+) {
+  const key = process.env.GEMINI_API_KEY as string;
+  let model = geminiModels[slot] ?? GEMINI_DEFAULTS[slot];
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const res = await send(`${GEMINI_URL}/${model}:${method}`, { "x-goog-api-key": key }, body(model), signal);
+    if (res.ok) {
+      geminiModels[slot] = model;
+      return res.json();
+    }
+    const detail = await res.text().catch(() => "");
+    if (res.status === 404) {
+      const found = await geminiDiscover(slot, key);
+      if (found && found !== model) {
+        model = found;
+        continue;
+      }
+    }
+    if (res.status === 400 && /thinking/i.test(detail) && !geminiNoThinkingConfig.has(model)) {
+      geminiNoThinkingConfig.add(model);
+      continue;
+    }
+    console.error(`Gemini ${model} ${method} returned ${res.status}: ${detail.slice(0, 300)}`);
+    throw new AiError(`Gemini returned ${res.status}.`, "failed");
+  }
+  throw new AiError("Gemini had no usable model.", "failed");
+}
+
+/** The newest model this key can use for the slot: Flash-Lite for fast, Flash for smart, a Gemini embedder. */
+async function geminiDiscover(slot: GeminiSlot, key: string): Promise<string | null> {
   try {
-    res = await fetch(url, {
+    const res = await fetch(`${GEMINI_URL}?pageSize=1000`, {
+      headers: { "x-goog-api-key": key },
+      signal: AbortSignal.timeout(10_000),
+    });
+    if (!res.ok) return null;
+    const { models = [] } = (await res.json()) as { models?: { name: string; supportedGenerationMethods?: string[] }[] };
+    const list = models.map((m) => ({ id: m.name.replace(/^models\//, ""), methods: m.supportedGenerationMethods ?? [] }));
+    const version = (id: string) => Number(id.match(/^gemini-(\d+(?:\.\d+)?)/)?.[1] ?? 0);
+    const pool =
+      slot === "embed"
+        ? list.filter((m) => m.methods.includes("embedContent") && m.id.startsWith("gemini-embedding"))
+        : list.filter(
+            (m) =>
+              m.methods.includes("generateContent") &&
+              /^gemini-\d/.test(m.id) &&
+              m.id.includes("flash") &&
+              (slot === "fast") === m.id.includes("lite") &&
+              !/(image|tts|audio|live|exp|thinking)/.test(m.id),
+          );
+    pool.sort((a, b) => version(b.id) - version(a.id) || Number(a.id.includes("preview")) - Number(b.id.includes("preview")));
+    if (pool[0]) console.info(`Gemini: using ${pool[0].id} for ${slot}`);
+    return pool[0]?.id ?? null;
+  } catch {
+    return null;
+  }
+}
+
+async function send(url: string, headers: Record<string, string>, body: unknown, signal: AbortSignal) {
+  try {
+    return await fetch(url, {
       method: "POST",
       headers: { "content-type": "application/json", ...headers },
       body: JSON.stringify(body),
@@ -150,6 +282,10 @@ async function post(url: string, headers: Record<string, string>, body: unknown,
     const timedOut = error instanceof DOMException && error.name === "TimeoutError";
     throw new AiError(timedOut ? "The AI provider timed out." : "The AI provider could not be reached.", "failed");
   }
+}
+
+async function post(url: string, headers: Record<string, string>, body: unknown, signal: AbortSignal) {
+  const res = await send(url, headers, body, signal);
   if (!res.ok) {
     const detail = await res.text().catch(() => "");
     console.error(`AI provider ${new URL(url).host} returned ${res.status}: ${detail.slice(0, 300)}`);

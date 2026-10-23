@@ -1,5 +1,5 @@
 /**
- * Every prompt Nexus sends to Claude, from section 8 of Nexus-Feature-List.md, with the product name updated.
+ * Every prompt Nexus sends to the model (Claude or Gemini), from section 8 of Nexus-Feature-List.md, with the product name updated.
  */
 
 export const MODES = ["Answer", "Draft Email", "Make Outline", "Action Steps", "Full Prep Brief"] as const;

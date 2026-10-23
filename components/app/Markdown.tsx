@@ -2,7 +2,7 @@ import { Fragment, type ReactNode } from "react";
 import styles from "./app.module.css";
 
 /**
- * A small Markdown renderer for Claude's replies: headings, paragraphs, nested bullet and numbered lists,
+ * A small Markdown renderer for the model's replies: headings, paragraphs, nested bullet and numbered lists,
  * bold, italic, inline code, links and the [#n] citations, which become chips pointing at the Sources list.
  * Builds React elements, never HTML strings.
  */

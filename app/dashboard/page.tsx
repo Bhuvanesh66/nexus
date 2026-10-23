@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { AppShell } from "@/components/app/AppShell";
-import { claudeConfigured } from "@/lib/ai";
+import { aiConfigured } from "@/lib/ai";
 import { getSession } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
@@ -20,7 +20,7 @@ export default async function DashboardPage() {
   return (
     <AppShell
       user={{ name, email: user.email ?? "", avatar: meta.avatar_url ?? meta.picture ?? null }}
-      aiReady={claudeConfigured()}
+      aiReady={aiConfigured()}
     />
   );
 }

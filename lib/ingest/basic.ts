@@ -1,5 +1,5 @@
 /**
- * The fallback when no Claude provider is configured, or Claude fails twice: a plain extract of the content,
+ * The fallback when no AI provider is configured, or the model fails twice: a plain extract of the content,
  * stored with summary_source = 'basic' and labelled "Basic summary" in the app. It is never presented as AI.
  */
 

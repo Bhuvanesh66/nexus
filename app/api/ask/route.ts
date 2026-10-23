@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { claudeConfigured, complete, embed, embeddingsConfigured, withRetry } from "@/lib/ai";
+import { aiConfigured, complete, embed, embeddingsConfigured, withRetry } from "@/lib/ai";
 import { fail, SIGNED_OUT } from "@/lib/http";
 import { searchTerms } from "@/lib/ingest/basic";
 import { askPrompt, MODES, type Mode } from "@/lib/prompts";
@@ -31,7 +31,7 @@ const toSource = (hit: Pick<Hit, "id" | "title" | "type" | "source_url">, n: num
 });
 
 /**
- * Renumbers the [#n] citations in order of first use, keeping only captures Claude actually cited, so the
+ * Renumbers the [#n] citations in order of first use, keeping only captures the model actually cited, so the
  * Sources list is exactly what fed the answer. Citations to numbers that were never retrieved are dropped.
  */
 function citeInOrder(response: string, hits: Hit[]) {
@@ -48,7 +48,7 @@ function citeInOrder(response: string, hits: Hit[]) {
   return { text, sources: order.map((n, i) => toSource(hits[n - 1], i + 1)) };
 }
 
-/** Hand off: retrieve the user's relevant fragments, then have Claude do the task in the chosen mode (8.3). */
+/** Hand off: retrieve the user's relevant fragments, then have the model do the task in the chosen mode (8.3). */
 export async function POST(request: Request) {
   const session = await getSession();
   if (!session) return SIGNED_OUT();
@@ -70,7 +70,7 @@ export async function POST(request: Request) {
 
   if (embeddingsConfigured()) {
     try {
-      const vector = await embed(task, request.signal);
+      const vector = await embed(task, { purpose: "query", signal: request.signal });
       const match = (threshold: number) =>
         supabase.rpc("match_captures", {
           query_embedding: vector,
@@ -90,7 +90,7 @@ export async function POST(request: Request) {
     add(data as Hit[] | null);
   }
 
-  if (!claudeConfigured()) {
+  if (!aiConfigured()) {
     return fail(503, "ai-not-configured", "Nexus’s AI isn’t connected yet, so it can’t write this for you.", {
       sources: hits.map((h, i) => toSource(h, i + 1)),
     });
@@ -102,7 +102,7 @@ export async function POST(request: Request) {
       complete({ prompt: askPrompt({ task, mode, captures: hits }), tier: "smart", maxTokens: 2000, signal: request.signal }),
     );
   } catch {
-    return fail(502, "ai-failed", "Claude is slow right now. Try again in a few seconds.");
+    return fail(502, "ai-failed", "Nexus’s AI is slow right now. Try again in a few seconds.");
   }
 
   const { text, sources } = citeInOrder(reply.trim(), hits);
