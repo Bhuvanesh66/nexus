@@ -1,6 +1,6 @@
 /** Shapes shared by the API routes and the app. Safe to import on the client. */
 
-export type CaptureType = "youtube" | "url" | "text" | "tweet" | "pdf";
+export type CaptureType = "youtube" | "url" | "text" | "tweet" | "pdf" | "video" | "audio";
 
 export type CaptureSummary = {
   id: string;
@@ -17,7 +17,12 @@ export type CaptureSummary = {
 
 export type Connection = { id: string; title: string; type: CaptureType; reason: string | null };
 
-export type CaptureDetail = CaptureSummary & { entities: string[]; connections: Connection[] };
+export type CaptureDetail = CaptureSummary & {
+  entities: string[];
+  connections: Connection[];
+  /** A short-lived link to the original video or audio, when one was uploaded. */
+  media_url: string | null;
+};
 
 export type AskSource = { n: number; id: string; title: string; type: CaptureType; source_url: string | null };
 
@@ -39,6 +44,8 @@ export const SOURCE_LABEL: Record<CaptureType, string> = {
   text: "Note",
   tweet: "Post on X",
   pdf: "PDF",
+  video: "Video",
+  audio: "Audio",
 };
 
 export const EMPTY_VAULT_LINE =

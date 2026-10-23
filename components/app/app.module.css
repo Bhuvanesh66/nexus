@@ -330,6 +330,25 @@
   color: var(--teal-deep);
 }
 
+.fileChip[data-kind="video"] {
+  color: var(--violet-deep);
+}
+
+.fileChip[data-kind="audio"] {
+  color: var(--sky-deep);
+}
+
+.player {
+  width: 100%;
+  max-height: 22rem;
+  border-radius: 12px;
+  background: var(--ink);
+}
+
+audio.player {
+  background: transparent;
+}
+
 .fileText {
   display: grid;
   min-width: 0;
@@ -944,6 +963,14 @@
 }
 .sourceIcon[data-type="pdf"] {
   background: #fff1f0;
+}
+.sourceIcon[data-type="video"] {
+  background: var(--violet-tint);
+  color: var(--violet-deep);
+}
+.sourceIcon[data-type="audio"] {
+  background: var(--sky-tint);
+  color: var(--sky-deep);
 }
 
 /* ---------- response ---------- */

@@ -239,3 +239,12 @@ export function PaperclipIcon(props: IconProps) {
     </Icon>
   );
 }
+
+export function MicIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <rect x="7.25" y="2.75" width="5.5" height="9" rx="2.75" />
+      <path d="M4.75 9.5a5.25 5.25 0 0 0 10.5 0M10 14.75v2.5" />
+    </Icon>
+  );
+}

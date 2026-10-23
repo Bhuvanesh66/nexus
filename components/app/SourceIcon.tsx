@@ -1,4 +1,4 @@
-import { GlobeIcon, NoteIcon, PdfLogo, XLogo, YouTubeLogo } from "@/components/icons";
+import { GlobeIcon, MicIcon, NoteIcon, PdfLogo, ReelIcon, XLogo, YouTubeLogo } from "@/components/icons";
 import { SOURCE_LABEL, type CaptureType } from "@/lib/vault";
 import styles from "./app.module.css";
 
@@ -12,6 +12,10 @@ export function SourceIcon({ type, size = 18 }: { type: CaptureType; size?: numb
         <XLogo size={size - 3} />
       ) : type === "pdf" ? (
         <PdfLogo size={size + 2} />
+      ) : type === "video" ? (
+        <ReelIcon size={size} />
+      ) : type === "audio" ? (
+        <MicIcon size={size} />
       ) : type === "url" ? (
         <GlobeIcon size={size} />
       ) : (

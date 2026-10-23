@@ -1,16 +1,27 @@
 "use client";
 
 import { useEffect, useRef, useState, type DragEvent, type FormEvent, type KeyboardEvent } from "react";
-import { ArrowIcon, LinkIcon, NoteIcon, PaperclipIcon, PdfLogo } from "@/components/icons";
+import { ArrowIcon, LinkIcon, MicIcon, NoteIcon, PaperclipIcon, PdfLogo, ReelIcon } from "@/components/icons";
 import { detectType, parseLink } from "@/lib/ingest/detect";
 import { SOURCE_LABEL, type CaptureSummary, type Connection } from "@/lib/vault";
 import styles from "./app.module.css";
-import { ACCEPT, canTake, draggedText, MAX_FILE_CHARS, readFile, type Attached } from "./files";
+import {
+  ACCEPT,
+  canTake,
+  draggedText,
+  formatBytes,
+  formatDuration,
+  MAX_FILE_CHARS,
+  readFile,
+  uploadWithProgress,
+  type Attached,
+} from "./files";
 import { api, Stages, useSlow, useStage } from "./shared";
 import { formatDate, SourceIcon } from "./SourceIcon";
 
 const MAX = 10_000;
 const STEPS = ["Reading", "Understanding", "Connecting"];
+const MEDIA_STEPS = ["Uploading", "Transcribing", "Understanding", "Connecting"];
 
 type Saved = { capture: CaptureSummary; connections: Connection[]; notices: string[] };
 type State =
@@ -37,17 +48,24 @@ export function DropPanel({
   const [reading, setReading] = useState<string | null>(null);
   const [fileNote, setFileNote] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
+  const [uploadPct, setUploadPct] = useState(0);
+  const [uploaded, setUploaded] = useState(false);
   const abort = useRef<AbortController | null>(null);
   const field = useRef<HTMLTextAreaElement>(null);
   const picker = useRef<HTMLInputElement>(null);
   const dragDepth = useRef(0);
 
   const link = file ? null : parseLink(input);
-  const kind = file ? SOURCE_LABEL[file.kind === "pdf" ? "pdf" : "text"] : link ? SOURCE_LABEL[detectType(link)] : input.trim() ? "Note" : null;
+  const kind = file ? SOURCE_LABEL[file.kind] : link ? SOURCE_LABEL[detectType(link)] : input.trim() ? "Note" : null;
   const working = state.kind === "working";
+  const isMedia = Boolean(file?.media);
   const ready = Boolean(input.trim() || file) && !reading;
-  const stage = useStage(working, link || file ? [0, 3500, 8000] : [0, 1200, 4000]);
-  const slow = useSlow(working, 25_000);
+  const stage = useStage(working && !isMedia, link || file ? [0, 3500, 8000] : [0, 1200, 4000]);
+  // Media: uploading until the file is stored, then transcribing, understanding and connecting on a schedule.
+  const mediaStage = useStage(working && isMedia && uploaded, [0, 15_000, 25_000]);
+  const steps = isMedia ? MEDIA_STEPS.map((s, i) => (i === 0 && !uploaded ? `${s} ${uploadPct}%` : s)) : STEPS;
+  const activeStep = isMedia ? (uploaded ? 1 + mediaStage : 0) : stage;
+  const slow = useSlow(working, isMedia ? 45_000 : 25_000);
 
   // A file dropped beside the box would make the browser open it and leave the app; keep it here instead.
   useEffect(() => {
@@ -117,12 +135,41 @@ export function DropPanel({
   async function send(options: { force?: boolean; pasted?: string } = {}) {
     if (!ready || working) return;
     abort.current = new AbortController();
+    const signal = abort.current.signal;
     setState({ kind: "working" });
-    const document = file ? { name: file.name, kind: file.kind, text: file.text } : undefined;
+
+    // Video and audio go straight to the user's private storage first, then the server transcribes them.
+    let media: { path: string; name: string; mime: string } | undefined;
+    if (file?.media) {
+      setUploadPct(0);
+      setUploaded(false);
+      const prep = await api<{ path: string; url: string }>("/api/uploads", {
+        method: "POST",
+        body: JSON.stringify({ name: file.name, type: file.mime, size: file.bytes }),
+        signal,
+      });
+      if (!prep.ok) {
+        setState(prep.error.code === "cancelled" ? { kind: "idle" } : { kind: "error", message: prep.error.message });
+        return;
+      }
+      const stored = await uploadWithProgress(prep.data.url, file.media, file.mime, setUploadPct, signal);
+      if (!stored) {
+        setState(
+          signal.aborted
+            ? { kind: "idle" }
+            : { kind: "error", message: "The upload didn’t finish. Check your connection and try again." },
+        );
+        return;
+      }
+      setUploaded(true);
+      media = { path: prep.data.path, name: file.name, mime: file.mime };
+    }
+
+    const document = file && !file.media ? { name: file.name, kind: file.kind, text: file.text } : undefined;
     const result = await api<Saved>("/api/capture", {
       method: "POST",
-      body: JSON.stringify({ input, document, ...options }),
-      signal: abort.current.signal,
+      body: JSON.stringify({ input, document, media, ...options }),
+      signal,
     });
     if (result.ok) {
       setState({ kind: "done", ...result.data });
@@ -167,8 +214,8 @@ export function DropPanel({
           Drop what you <span data-tone="drop">just learned.</span>
         </h1>
         <p className={styles.lead}>
-          A note, a YouTube video, an article, a post on X, a PDF. Nexus reads it, pulls out what matters and stitches it
-          to what you dropped before.
+          A note, a YouTube video or reel, an article, a post on X, a PDF, a video or voice recording. Nexus reads it,
+          pulls out what matters and stitches it to what you dropped before.
         </p>
 
         <form
@@ -185,11 +232,12 @@ export function DropPanel({
             <div className={styles.dropOverlay} aria-hidden="true">
               <span className={styles.dropOverlayIcons}>
                 <PdfLogo size={30} />
-                <NoteIcon size={26} />
+                <ReelIcon size={26} />
+                <MicIcon size={26} />
                 <LinkIcon size={26} />
               </span>
               <strong>Drop it here</strong>
-              <span>A PDF, a text file, or a link from another tab</span>
+              <span>A PDF, a video, a voice note, a text file, or a link from another tab</span>
             </div>
           ) : null}
           <label htmlFor="drop-input" className="sr-only">
@@ -197,18 +245,35 @@ export function DropPanel({
           </label>
           {file || reading ? (
             <div className={styles.fileChip} data-kind={file?.kind ?? "pdf"}>
-              {file?.kind === "text" ? <NoteIcon size={22} /> : <PdfLogo size={26} />}
+              {file?.kind === "text" ? (
+                <NoteIcon size={22} />
+              ) : file?.kind === "video" ? (
+                <ReelIcon size={24} />
+              ) : file?.kind === "audio" ? (
+                <MicIcon size={24} />
+              ) : (
+                <PdfLogo size={26} />
+              )}
               <span className={styles.fileText}>
                 <span className={styles.fileName}>{file?.name ?? reading}</span>
                 <span className={styles.fileMeta}>
-                  {file
+                  {file?.media
                     ? [
-                        file.pages ? `${file.pages} ${file.pages === 1 ? "page" : "pages"}` : null,
-                        `${Math.min(file.chars, MAX_FILE_CHARS).toLocaleString("en-IN")} characters`,
+                        file.kind === "video" ? "Video" : "Audio",
+                        file.duration ? formatDuration(file.duration) : null,
+                        formatBytes(file.bytes),
+                        "transcribed when you drop it",
                       ]
                         .filter(Boolean)
                         .join(" · ")
-                    : "Reading the file…"}
+                    : file
+                      ? [
+                          file.pages ? `${file.pages} ${file.pages === 1 ? "page" : "pages"}` : null,
+                          `${Math.min(file.chars, MAX_FILE_CHARS).toLocaleString("en-IN")} characters`,
+                        ]
+                          .filter(Boolean)
+                          .join(" · ")
+                      : "Reading the file…"}
                 </span>
               </span>
               {file ? (
@@ -281,7 +346,7 @@ export function DropPanel({
                     ) : null}
                   </>
                 ) : (
-                  <span className={styles.hintKeys}>or drag a PDF, a text file or a link here</span>
+                  <span className={styles.hintKeys}>or drag a PDF, a video or a link here</span>
                 )}
               </span>
             </span>
@@ -300,7 +365,7 @@ export function DropPanel({
         <div className={styles.outcome} aria-live="polite">
           {working ? (
             <div className={styles.processing}>
-              <Stages steps={STEPS} active={stage} label="Absorbing your drop" />
+              <Stages steps={steps} active={activeStep} label="Absorbing your drop" />
               <div className={styles.skeleton} aria-hidden="true">
                 <span />
                 <span />
@@ -344,7 +409,8 @@ export function DropPanel({
               <p>
                 {state.title ? (
                   <>
-                    <strong>{state.title}</strong>.{" "}
+                    <strong>{state.title}</strong>
+                    {/[.!?…]$/.test(state.title) ? " " : ". "}
                   </>
                 ) : null}
                 {state.message}

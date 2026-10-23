@@ -95,6 +95,14 @@ function DetailContent({ id, confirmDelete, onOpen, onDeleted }: Omit<Props, "id
             </h2>
             <p className={styles.takeaway}>{current.data.one_line_takeaway}</p>
 
+            {current.data.media_url ? (
+              current.data.type === "audio" ? (
+                <audio className={styles.player} src={current.data.media_url} controls preload="metadata" />
+              ) : (
+                <video className={styles.player} src={current.data.media_url} controls preload="metadata" playsInline />
+              )
+            ) : null}
+
             <h3 className={styles.detailHead}>Summary</h3>
             <p className={styles.detailSummary}>{current.data.summary}</p>
 

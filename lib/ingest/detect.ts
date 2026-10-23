@@ -1,4 +1,4 @@
-export type CaptureType = "youtube" | "url" | "text" | "tweet";
+export type CaptureType = "youtube" | "url" | "text" | "tweet" | "video";
 
 /** The input as a URL when the whole drop is one link, otherwise null (it is a note). */
 export function parseLink(input: string): URL | null {
@@ -36,9 +36,19 @@ export function isPost(url: URL) {
   return (host === "x.com" || host === "twitter.com") && /^\/\w+\/status\/\d+/.test(url.pathname);
 }
 
+/** Short-form video links: Instagram reels and posts, TikTok, Facebook reels. */
+export function isReel(url: URL) {
+  const host = url.hostname.replace(/^(www|m|vm|vt)\./, "");
+  if (host === "instagram.com") return /^\/(reel|reels|p|tv)\/[\w-]+/.test(url.pathname);
+  if (host === "tiktok.com") return url.pathname.length > 1;
+  if (host === "facebook.com") return /^\/(reel|watch|share\/r|share\/v)\b/.test(url.pathname);
+  return host === "fb.watch";
+}
+
 export function detectType(url: URL): CaptureType {
   if (youtubeId(url)) return "youtube";
   if (isPost(url)) return "tweet";
+  if (isReel(url)) return "video";
   return "url";
 }
 

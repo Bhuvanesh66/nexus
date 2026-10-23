@@ -1,10 +1,21 @@
 import { NextResponse } from "next/server";
-import { AiError, aiConfigured, complete, embed, embeddingsConfigured, parseJson, withRetry } from "@/lib/ai";
+import {
+  AiError,
+  aiConfigured,
+  complete,
+  embed,
+  embeddingsConfigured,
+  parseJson,
+  transcribe,
+  transcriptionConfigured,
+  withRetry,
+} from "@/lib/ai";
 import { fail, SIGNED_OUT } from "@/lib/http";
 import { fetchArticle } from "@/lib/ingest/article";
 import { basicSummary } from "@/lib/ingest/basic";
 import { detectType, isPublicHost, normalizeUrl, parseLink, youtubeId } from "@/lib/ingest/detect";
 import { fetchPost } from "@/lib/ingest/post";
+import { fetchReel } from "@/lib/ingest/reel";
 import { youtubeMeta, youtubeTranscript } from "@/lib/ingest/youtube";
 import { connectionsPrompt, summarisePrompt } from "@/lib/prompts";
 import { getSession } from "@/lib/supabase/server";
@@ -41,6 +52,17 @@ function toDocument(value: unknown) {
   };
 }
 
+/** An uploaded video or audio file in the user's own folder of the "uploads" bucket; null when it isn't one. */
+function toMedia(value: unknown, userId: string) {
+  if (!value || typeof value !== "object") return null;
+  const v = value as { path?: unknown; name?: unknown; mime?: unknown };
+  if (typeof v.path !== "string" || typeof v.mime !== "string") return null;
+  if (!v.path.startsWith(`${userId}/`) || !/^[\w-]+\/[\w-]+\.[a-z0-9]{1,5}$/.test(v.path)) return null;
+  if (!/^(video|audio)\/[\w.+-]+$/.test(v.mime)) return null;
+  const name = typeof v.name === "string" && v.name.trim() ? v.name.trim().slice(0, 200) : "Untitled recording";
+  return { path: v.path, mime: v.mime, name };
+}
+
 /** Checks the model's JSON against the 8.1 contract; null when it does not hold. */
 function toMeta(value: unknown): Meta | null {
   if (!value || typeof value !== "object") return null;
@@ -71,6 +93,7 @@ export async function POST(request: Request) {
     pasted?: unknown;
     force?: unknown;
     document?: unknown;
+    media?: unknown;
   } | null;
   const input = typeof body?.input === "string" ? body.input.trim() : "";
   const pasted = typeof body?.pasted === "string" ? body.pasted.trim() : "";
@@ -78,7 +101,9 @@ export async function POST(request: Request) {
   if (body?.document !== undefined && !file) {
     return fail(400, "empty-file", "Nexus couldn’t find any text in that file. Try another, or paste the text.");
   }
-  if (!input && !file) return fail(400, "empty", "Drop a note, a link or a file first.");
+  const media = toMedia(body?.media, user.id);
+  if (body?.media !== undefined && !media) return fail(400, "bad-media", "That upload didn’t come through. Try again.");
+  if (!input && !file && !media) return fail(400, "empty", "Drop a note, a link or a file first.");
   if (input.length > MAX_INPUT || pasted.length > MAX_INPUT) {
     return fail(400, "too-long", "That’s over 10,000 characters. Trim it a little and drop it again.");
   }
@@ -88,13 +113,39 @@ export async function POST(request: Request) {
   let sourceUrl: string | null = null;
   let raw = input;
   let titleHint: string | null = null;
+  let mediaPath: string | null = null;
+  const removeUpload = () => (media ? supabase.storage.from("uploads").remove([media.path]) : Promise.resolve());
 
   // A dropped file arrives as text already read in the browser (PDFs via pdf.js); the note, if any, rides along.
-  const link = file ? null : parseLink(input);
+  const link = file || media ? null : parseLink(input);
   if (file) {
     type = file.kind === "pdf" ? "pdf" : "text";
     titleHint = file.name.replace(/\.[a-z0-9]{1,5}$/i, "");
     raw = `${file.kind === "pdf" ? "PDF" : "File"}: ${file.name}\n\n${input ? `The user's note: ${input}\n\n` : ""}${file.text}`;
+  } else if (media) {
+    // A video or audio file the browser uploaded to the user's private folder: transcribe it, keep the original.
+    if (!transcriptionConfigured()) {
+      await removeUpload();
+      return fail(503, "no-transcription", "Nexus can’t transcribe video or audio on this deployment yet.");
+    }
+    const { data: blob, error } = await supabase.storage.from("uploads").download(media.path);
+    if (error || !blob) return fail(404, "upload-missing", "The upload didn’t arrive. Try dropping the file again.");
+    let transcript: string;
+    try {
+      transcript = await transcribe({
+        kind: "file",
+        bytes: new Uint8Array(await blob.arrayBuffer()),
+        mime: media.mime,
+        name: media.name,
+      });
+    } catch {
+      await removeUpload();
+      return fail(422, "no-transcript", "Nexus couldn’t transcribe this file. Try another, or paste what it says.");
+    }
+    type = media.mime.startsWith("audio/") ? "audio" : "video";
+    titleHint = media.name.replace(/\.[a-z0-9]{1,5}$/i, "");
+    mediaPath = media.path;
+    raw = `${type === "audio" ? "Audio" : "Video"}: ${media.name}\n\n${input ? `The user's note: ${input}\n\n` : ""}${transcript}`;
   } else if (link) {
     if (!isPublicHost(link)) return fail(400, "bad-link", "Nexus can’t reach that address. Paste a public web link.");
     type = detectType(link);
@@ -125,12 +176,41 @@ export async function POST(request: Request) {
       if (pasted) raw = `${heading}\n\nThe user's own summary:\n${pasted}`;
       else if (transcript) raw = `${heading}\n\nTranscript:\n${transcript}`;
       else {
-        return fail(422, "no-transcript", "We couldn’t auto-transcribe this video. Paste a summary yourself?", {
-          title: meta?.title ?? null,
-        });
+        // YouTube refuses captions to most servers; Gemini can watch the video on Google's side instead.
+        const watched = transcriptionConfigured()
+          ? await transcribe({ kind: "youtube", url: sourceUrl }).catch(() => null)
+          : null;
+        if (!watched) {
+          return fail(422, "no-transcript", "We couldn’t auto-transcribe this video. Paste a summary yourself?", {
+            title: meta?.title ?? null,
+          });
+        }
+        raw = `${heading}\n\n${watched}`;
       }
     } else if (pasted) {
       raw = `Saved from ${sourceUrl}\n\n${pasted}`;
+    } else if (type === "video") {
+      // Reels and short videos: transcribe the video when the platform shares it, otherwise keep the caption.
+      const reel = await fetchReel(sourceUrl);
+      let transcript: string | null = null;
+      if (reel?.video && transcriptionConfigured()) {
+        transcript = await transcribe({ kind: "file", bytes: reel.video.bytes, mime: reel.video.mime, name: "reel.mp4" }).catch(
+          () => null,
+        );
+      }
+      if (!reel || (!transcript && !reel.caption)) {
+        return fail(
+          422,
+          "blocked",
+          "This app doesn’t share its videos with Nexus. Save the video to your phone and drop the file here (Nexus transcribes it), or paste what it says.",
+        );
+      }
+      titleHint = reel.title;
+      raw = `${reel.title}\n\n${reel.caption ? `Caption: ${reel.caption}\n\n` : ""}${transcript ?? ""}`.trim();
+      if (!transcript) {
+        type = "url";
+        notices.push("The platform shared only the caption, so that’s what Nexus saved. Drop the video file for a full transcript.");
+      }
     } else if (type === "tweet") {
       const post = await fetchPost(sourceUrl);
       if (!post) return fail(422, "blocked", "This post is blocking us. Paste the content you want to save instead.");
@@ -176,7 +256,7 @@ export async function POST(request: Request) {
     // Links are stored as a heading paragraph then the body; the plain extract reads the body.
     const content = file
       ? file.text
-      : link
+      : link || media
         ? raw.split("\n\n").slice(1).join("\n\n").replace(/^(Transcript|The user's own summary):\n/, "")
         : raw;
     meta = basicSummary(content || raw, titleHint);
@@ -254,11 +334,13 @@ export async function POST(request: Request) {
       entities: meta.entities,
       embedding,
       summary_source: summarySource,
+      media_path: mediaPath,
     })
     .select(SUMMARY_COLUMNS)
     .single();
   if (error || !inserted) {
     console.error("capture insert failed", error?.message);
+    await removeUpload();
     return fail(500, "save-failed", "Nexus couldn’t save this just now. Try again in a moment.");
   }
   const capture = toSummary(inserted as unknown as Parameters<typeof toSummary>[0]);

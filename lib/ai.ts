@@ -186,6 +186,170 @@ export async function embed(
   return vector;
 }
 
+/* ---------- transcription: YouTube links, uploaded video and audio, reels fetched from their page ---------- */
+
+export type MediaSource =
+  | { kind: "youtube"; url: string }
+  | { kind: "file"; bytes: Uint8Array; mime: string; name: string };
+
+const GEMINI_FILES_URL = "https://generativelanguage.googleapis.com";
+const INLINE_MAX_BYTES = 10 * 1024 * 1024; // Gemini takes up to 20 MB per request; base64 adds a third
+const GROQ_MAX_BYTES = 25 * 1024 * 1024; // Groq's free-tier file limit
+
+const VIDEO_PROMPT = `Transcribe this video for a personal knowledge app. Reply in plain text, in exactly this shape:
+
+Transcript:
+<everything that is said, word for word, in the original language; if nothing is said, write (no speech)>
+
+On-screen text:
+<text shown on screen that carries information, one item per line, or (none)>
+
+What's shown:
+<two or three sentences on what the video shows>`;
+
+const AUDIO_PROMPT =
+  "Transcribe everything said in this audio, word for word, in the original language. Reply with the transcript only.";
+
+export function transcriptionConfigured() {
+  return Boolean(process.env.GEMINI_API_KEY || process.env.GROQ_API_KEY);
+}
+
+/**
+ * Speech (and, for video, on-screen text) as plain text. Video goes to Gemini first, because reels often carry
+ * their point in captions and on-screen text that speech-to-text misses; audio goes to Groq Whisper first when
+ * GROQ_API_KEY is set. Each falls back to the other. YouTube links are read by Gemini on Google's side, so they
+ * work from servers YouTube refuses captions to.
+ */
+export async function transcribe(source: MediaSource, signal?: AbortSignal): Promise<string> {
+  const timeout = AbortSignal.timeout(100_000);
+  const abort = signal ? AbortSignal.any([signal, timeout]) : timeout;
+  const audio = source.kind === "file" && source.mime.startsWith("audio/");
+  let lastError: unknown = null;
+  for (const provider of audio ? ["groq", "gemini"] : ["gemini", "groq"]) {
+    try {
+      if (provider === "gemini" && process.env.GEMINI_API_KEY) return await geminiTranscribe(source, audio, abort);
+      if (
+        provider === "groq" &&
+        process.env.GROQ_API_KEY &&
+        source.kind === "file" &&
+        source.bytes.byteLength <= GROQ_MAX_BYTES
+      ) {
+        return await groqTranscribe(source, abort);
+      }
+    } catch (error) {
+      lastError = error;
+      if (abort.aborted) break;
+    }
+  }
+  if (lastError) throw lastError;
+  throw new AiError("No transcription provider is configured.", "not-configured");
+}
+
+async function geminiTranscribe(source: MediaSource, audio: boolean, signal: AbortSignal) {
+  const key = process.env.GEMINI_API_KEY as string;
+  let media: Record<string, unknown>;
+  let uploaded: string | null = null;
+  if (source.kind === "youtube") {
+    // Read on Google's side (public videos only); low media resolution keeps long videos quick and affordable.
+    media = { fileData: { fileUri: source.url } };
+  } else if (source.bytes.byteLength <= INLINE_MAX_BYTES) {
+    media = { inlineData: { mimeType: source.mime, data: Buffer.from(source.bytes).toString("base64") } };
+  } else {
+    const file = await geminiUpload(source, key, signal);
+    uploaded = file.name;
+    media = { fileData: { fileUri: file.uri, mimeType: source.mime } };
+  }
+
+  try {
+    const res = await gemini(
+      "fast",
+      "generateContent",
+      () => ({
+        contents: [{ role: "user", parts: [media, { text: audio ? AUDIO_PROMPT : VIDEO_PROMPT }] }],
+        generationConfig: {
+          maxOutputTokens: 16384,
+          ...(audio ? {} : { mediaResolution: "MEDIA_RESOLUTION_LOW" }),
+        },
+      }),
+      signal,
+      { ownModelMs: 60_000 },
+    );
+    const body = res as { candidates?: { content?: { parts?: { text?: string; thought?: boolean }[] } }[] };
+    const text = (body.candidates?.[0]?.content?.parts ?? [])
+      .filter((p) => !p.thought && p.text)
+      .map((p) => p.text)
+      .join("")
+      .trim();
+    if (!text) throw new AiError("Gemini returned no transcript.", "failed");
+    return text;
+  } finally {
+    if (uploaded) {
+      // Files expire after 48 hours anyway; this just tidies up straight away.
+      void fetch(`${GEMINI_FILES_URL}/v1beta/${uploaded}`, { method: "DELETE", headers: { "x-goog-api-key": key } }).catch(
+        () => undefined,
+      );
+    }
+  }
+}
+
+/** Gemini Files API: resumable upload, then wait until the file has been processed. */
+async function geminiUpload(source: Extract<MediaSource, { kind: "file" }>, key: string, signal: AbortSignal) {
+  const start = await fetch(`${GEMINI_FILES_URL}/upload/v1beta/files`, {
+    method: "POST",
+    headers: {
+      "x-goog-api-key": key,
+      "X-Goog-Upload-Protocol": "resumable",
+      "X-Goog-Upload-Command": "start",
+      "X-Goog-Upload-Header-Content-Length": String(source.bytes.byteLength),
+      "X-Goog-Upload-Header-Content-Type": source.mime,
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({ file: { display_name: source.name.slice(0, 100) } }),
+    signal,
+  });
+  const uploadUrl = start.headers.get("x-goog-upload-url");
+  if (!start.ok || !uploadUrl) throw new AiError(`Gemini refused the upload (${start.status}).`, "failed");
+
+  const done = await fetch(uploadUrl, {
+    method: "POST",
+    headers: { "X-Goog-Upload-Offset": "0", "X-Goog-Upload-Command": "upload, finalize" },
+    body: source.bytes as unknown as BodyInit,
+    signal,
+  });
+  const file = ((await done.json().catch(() => ({}))) as { file?: { name: string; uri: string; state?: string } }).file;
+  if (!done.ok || !file) throw new AiError(`Gemini upload failed (${done.status}).`, "failed");
+
+  let state = file.state ?? "PROCESSING";
+  for (let i = 0; state === "PROCESSING" && i < 30; i++) {
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+    const check = await fetch(`${GEMINI_FILES_URL}/v1beta/${file.name}`, { headers: { "x-goog-api-key": key }, signal });
+    state = ((await check.json().catch(() => ({}))) as { state?: string }).state ?? "FAILED";
+  }
+  if (state !== "ACTIVE") throw new AiError(`Gemini couldn't process the file (${state}).`, "failed");
+  return file;
+}
+
+/** Groq's hosted Whisper (whisper-large-v3-turbo): speech only, very fast. */
+async function groqTranscribe(source: Extract<MediaSource, { kind: "file" }>, signal: AbortSignal) {
+  const form = new FormData();
+  form.append("file", new Blob([source.bytes as unknown as BlobPart], { type: source.mime }), source.name);
+  form.append("model", process.env.GROQ_WHISPER_MODEL || "whisper-large-v3-turbo");
+  form.append("response_format", "text");
+  const res = await fetch("https://api.groq.com/openai/v1/audio/transcriptions", {
+    method: "POST",
+    headers: { authorization: `Bearer ${process.env.GROQ_API_KEY}` },
+    body: form,
+    signal,
+  });
+  if (!res.ok) {
+    console.error(`Groq transcription returned ${res.status}: ${(await res.text().catch(() => "")).slice(0, 300)}`);
+    throw new AiError(`Groq returned ${res.status}.`, "failed");
+  }
+  const text = (await res.text()).trim();
+  if (!text) throw new AiError("Groq returned no transcript.", "failed");
+  return text;
+}
+
 /** Retries a call once, as the spec asks for model errors and timeouts. */
 export async function withRetry<T>(call: () => Promise<T>): Promise<T> {
   try {
@@ -222,6 +386,7 @@ async function gemini(
   method: "generateContent" | "embedContent",
   body: (model: string) => unknown,
   signal: AbortSignal,
+  { ownModelMs = OWN_MODEL_MS }: { ownModelMs?: number } = {},
 ) {
   const key = process.env.GEMINI_API_KEY as string;
   const canStandIn = method === "generateContent";
@@ -245,7 +410,7 @@ async function gemini(
 
   for (let attempt = 0; attempt < 5; attempt++) {
     // The slot's own model gets a shorter leash, so a stand-in still has time to answer.
-    const attemptSignal = canStandIn && !standIn ? AbortSignal.any([signal, AbortSignal.timeout(OWN_MODEL_MS)]) : signal;
+    const attemptSignal = canStandIn && !standIn ? AbortSignal.any([signal, AbortSignal.timeout(ownModelMs)]) : signal;
     let res: Response;
     try {
       res = await send(`${GEMINI_URL}/${model}:${method}`, { "x-goog-api-key": key }, body(model), attemptSignal);
