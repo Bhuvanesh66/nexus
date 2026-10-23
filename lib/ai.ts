@@ -33,9 +33,10 @@ const GEMINI_DEFAULTS: Record<GeminiSlot, string> = {
   smart: process.env.GEMINI_MODEL_SMART || "gemini-flash-latest",
   embed: process.env.GEMINI_EMBEDDING_MODEL || "gemini-embedding-001",
 };
-// Learned per server instance: the model that answered for each slot, and models that refuse a thinking budget.
+// Learned per server instance: the model that answered for each slot, and settings a model refused.
 const geminiModels: Partial<Record<GeminiSlot, string>> = {};
 const geminiNoThinkingConfig = new Set<string>();
+const geminiNoJsonMode = new Set<string>();
 
 export class AiError extends Error {
   constructor(
@@ -100,7 +101,7 @@ export async function complete({
         generationConfig: {
           // The ceiling leaves room for thinking, which Gemini counts as output.
           maxOutputTokens: maxTokens + 4096,
-          ...(json ? { responseMimeType: "application/json" } : {}),
+          ...(json && !geminiNoJsonMode.has(model) ? { responseMimeType: "application/json" } : {}),
           // Summaries skip thinking for speed; hand-offs think a little. Models that refuse this get none.
           ...(geminiNoThinkingConfig.has(model)
             ? {}
@@ -205,8 +206,9 @@ export function parseJson(text: string): unknown {
 
 /**
  * One Gemini call that heals itself: if the model isn't available to this key (404), it asks Google which
- * models are and takes the newest that fits the slot; if the model refuses the thinking setting (400), it
- * drops the setting. Both lessons are kept for the life of the server instance.
+ * models are and takes the newest that fits the slot; if the model refuses the request (400, which Gemini
+ * often reports without naming the field), it drops the thinking setting, then JSON mode. Lessons are kept
+ * for the life of the server instance.
  */
 async function gemini(
   slot: GeminiSlot,
@@ -216,9 +218,10 @@ async function gemini(
 ) {
   const key = process.env.GEMINI_API_KEY as string;
   let model = geminiModels[slot] ?? GEMINI_DEFAULTS[slot];
-  for (let attempt = 0; attempt < 3; attempt++) {
+  for (let attempt = 0; attempt < 4; attempt++) {
     const res = await send(`${GEMINI_URL}/${model}:${method}`, { "x-goog-api-key": key }, body(model), signal);
     if (res.ok) {
+      if (geminiModels[slot] !== model) console.info(`Gemini: ${model} answers for ${slot}`);
       geminiModels[slot] = model;
       return res.json();
     }
@@ -230,9 +233,17 @@ async function gemini(
         continue;
       }
     }
-    if (res.status === 400 && /thinking/i.test(detail) && !geminiNoThinkingConfig.has(model)) {
-      geminiNoThinkingConfig.add(model);
-      continue;
+    if (res.status === 400 && method === "generateContent") {
+      if (!geminiNoThinkingConfig.has(model)) {
+        console.warn(`Gemini ${model} refused the request (${detail.slice(0, 160)}); retrying without a thinking budget`);
+        geminiNoThinkingConfig.add(model);
+        continue;
+      }
+      if (!geminiNoJsonMode.has(model)) {
+        console.warn(`Gemini ${model} refused the request again; retrying without JSON mode`);
+        geminiNoJsonMode.add(model);
+        continue;
+      }
     }
     console.error(`Gemini ${model} ${method} returned ${res.status}: ${detail.slice(0, 300)}`);
     throw new AiError(`Gemini returned ${res.status}.`, "failed");
@@ -280,6 +291,8 @@ async function send(url: string, headers: Record<string, string>, body: unknown,
     });
   } catch (error) {
     const timedOut = error instanceof DOMException && error.name === "TimeoutError";
+    const aborted = error instanceof DOMException && error.name === "AbortError";
+    if (!aborted) console.error(`AI call to ${new URL(url).pathname} ${timedOut ? "timed out" : "failed to connect"}`);
     throw new AiError(timedOut ? "The AI provider timed out." : "The AI provider could not be reached.", "failed");
   }
 }

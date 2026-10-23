@@ -6,7 +6,8 @@ import { askPrompt, MODES, type Mode } from "@/lib/prompts";
 import { getSession } from "@/lib/supabase/server";
 import type { AskRecord, AskSource, CaptureType } from "@/lib/vault";
 
-export const maxDuration = 60;
+// Room for one retry of a slow model call (Vercel allows up to 300 s with Fluid compute).
+export const maxDuration = 120;
 
 const TOP = 8;
 const THRESHOLD = 0.6;
@@ -80,8 +81,9 @@ export async function POST(request: Request) {
         });
       add((await match(THRESHOLD)).data as Hit[] | null);
       if (hits.length < 3) add((await match(BACKFILL_THRESHOLD)).data as Hit[] | null);
-    } catch {
+    } catch (error) {
       // the keyword backup below still runs
+      console.error("ask: semantic retrieval skipped:", error instanceof Error ? error.message : error);
     }
   }
   const terms = searchTerms(task);
@@ -101,7 +103,8 @@ export async function POST(request: Request) {
     reply = await withRetry(() =>
       complete({ prompt: askPrompt({ task, mode, captures: hits }), tier: "smart", maxTokens: 2000, signal: request.signal }),
     );
-  } catch {
+  } catch (error) {
+    console.error("ask: the model failed twice:", error instanceof Error ? error.message : error);
     return fail(502, "ai-failed", "Nexus’s AI is slow right now. Try again in a few seconds.");
   }
 
