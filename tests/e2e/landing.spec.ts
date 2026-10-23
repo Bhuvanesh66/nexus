@@ -29,6 +29,12 @@ test.describe("landing page", () => {
     await expect(cta).toBeVisible();
     await expect(cta).toHaveAttribute("href", "/sign-in");
     await expect(page.getByText("No credit card. Free during beta.")).toBeVisible();
+    await expect(page.getByRole("list", { name: "What you can drop" }).getByRole("listitem")).toHaveText([
+      /^Instagram reels/,
+      /^YouTube Shorts/,
+      /^PDFs/,
+      /^Posts on X/,
+    ]);
     await page.waitForTimeout(2500);
     expect(problems).toEqual([]);
   });

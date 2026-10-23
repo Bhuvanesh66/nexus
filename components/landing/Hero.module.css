@@ -13,10 +13,10 @@
   }
 }
 
+/* the copy runs top-down: the sources panel follows the actions, so no gap opens under them at any width */
 .copy {
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
   gap: 2.5rem;
   min-width: 0;
 }
@@ -119,7 +119,7 @@
 
 .foot {
   display: grid;
-  gap: 0.75rem;
+  gap: 1rem;
 }
 
 .note {
@@ -128,34 +128,60 @@
   line-height: 1.45;
 }
 
-.sources {
-  display: flex;
-  flex-wrap: wrap;
+/* what you can drop: one panel of the app's sources, split by hairlines, each row led by its brand's mark */
+[data-ui].drops {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  overflow: hidden;
+  border: 1px solid var(--ui-border);
+  border-radius: 12px;
+  background: var(--ui-border);
+}
+
+[data-ui] .drop {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
   align-items: center;
-  gap: 0.6rem 0.9rem;
-  color: var(--muted);
-  font-size: var(--step-small);
+  column-gap: 14px;
+  min-height: 84px;
+  padding: 12px 16px;
+  background: var(--bg);
 }
 
-.sourceIcons {
-  display: inline-flex;
-  gap: 0.55rem;
+@media (max-width: 599px) {
+  [data-ui].drops {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  [data-ui] .drop {
+    min-height: 60px;
+    padding: 10px 14px;
+  }
 }
 
-.sourceIcons > :nth-child(1) {
-  color: var(--violet-deep);
+[data-ui] .drop > svg {
+  flex: none;
 }
 
-.sourceIcons > :nth-child(2) {
-  color: var(--blue-deep);
+[data-ui] .dropText {
+  display: grid;
+  min-width: 0;
 }
 
-.sourceIcons > :nth-child(3) {
-  color: var(--sky-deep);
+[data-ui] .dropName {
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 20px;
 }
 
-.sourceIcons > :nth-child(4) {
-  color: var(--teal-deep);
+[data-ui] .dropExample {
+  overflow: hidden;
+  color: var(--ui-faint);
+  font-size: 13px;
+  line-height: 18px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 /* the working product stands on one flat field of lavender */

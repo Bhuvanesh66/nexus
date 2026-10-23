@@ -1,12 +1,20 @@
 import Link from "next/link";
 import { DemoSection } from "@/components/demo/DemoSection";
-import { ArrowIcon, ArticleIcon, NoteIcon, PostIcon, YouTubeIcon } from "@/components/icons";
+import { ArrowIcon, InstagramLogo, PdfLogo, XLogo, YouTubeShortsLogo } from "@/components/icons";
 import { cssVars } from "@/lib/css";
 import { SIGN_IN_HREF } from "@/lib/site";
 import styles from "./Hero.module.css";
 import { WatchDemoLink } from "./WatchDemoLink";
 
 const HEADLINE = ["Beyond", "memory."];
+
+/** The fragments people drop most, each with its own mark and the kind of link or file it arrives as. */
+const DROPS = [
+  { name: "Instagram reels", example: "instagram.com/reel/…", Logo: InstagramLogo },
+  { name: "YouTube Shorts", example: "youtube.com/shorts/…", Logo: YouTubeShortsLogo },
+  { name: "PDFs", example: "Seed-deck-v3.pdf", Logo: PdfLogo },
+  { name: "Posts on X", example: "x.com/…/status/…", Logo: XLogo },
+];
 
 export function Hero() {
   return (
@@ -39,15 +47,18 @@ export function Hero() {
 
         <div className={`${styles.foot} ${styles.load}`} style={cssVars({ "--delay": "560ms" })}>
           <p className={styles.note}>No folders. No tagging. No setup. Just drop fragments — Nexus handles the rest.</p>
-          <p className={styles.sources}>
-            <span className={styles.sourceIcons} aria-hidden="true">
-              <YouTubeIcon size={18} />
-              <ArticleIcon size={18} />
-              <PostIcon size={18} />
-              <NoteIcon size={18} />
-            </span>
-            Drop YouTube links, articles, tweets and typed notes.
-          </p>
+          {/* the app's own sources panel, so it keeps the interface's borders (data-ui) */}
+          <ul className={styles.drops} data-ui="" aria-label="What you can drop">
+            {DROPS.map(({ name, example, Logo }) => (
+              <li key={name} className={styles.drop}>
+                <Logo size={34} />
+                <span className={styles.dropText}>
+                  <span className={styles.dropName}>{name}</span>
+                  <span className={styles.dropExample}>{example}</span>
+                </span>
+              </li>
+            ))}
+          </ul>
         </div>
       </div>
 
