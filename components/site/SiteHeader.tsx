@@ -26,9 +26,9 @@ export function SiteHeader({ links = true }: { links?: boolean }) {
             </>
           ) : null}
           <li>
-            <Link href={SIGN_IN_HREF} prefetch={false}>
+            <a href={SIGN_IN_HREF}>
               Sign in
-            </Link>
+            </a>
           </li>
         </ul>
       </nav>

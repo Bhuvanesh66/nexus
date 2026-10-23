@@ -227,13 +227,19 @@ a {
   transform: scale(0.97);
 }
 
+.button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+}
+
 .button-arrow {
   flex: none;
   transition: transform var(--t-ui) var(--ease-out);
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .button:hover {
+  .button:not(:disabled):hover {
     background: var(--accent-strong);
   }
 }

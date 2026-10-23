@@ -1,14 +1,18 @@
-# Nexus: landing page
+# Nexus
 
-The public landing page for Nexus (formerly Second Brain; Airtribe AI Builders Day ’26), built from `product.md`,
-`opus_master_prompt.md`, `Second_Brain_Feature_Spec_Designed.md` and the Nexus positioning edits. The page
-explains the product with an interactive demo of the loop the app will run: drop → absorb → connect → hand off
-→ surface → deliver.
+Nexus, *beyond memory*: drop what you learn, Nexus absorbs it and connects it to what you dropped before, and when
+you hand it a task it pulls the fragments that matter, adds general knowledge and does the work. Built for
+Airtribe AI Builders Day ’26 from `Nexus-Feature-List.md` (functional spec) and the live landing page (brand).
+Product requirements: `PRD.md`. What works and what is blocked: `BUILD_STATUS.md`.
 
 Live: https://second-brain-six-swart.vercel.app (Vercel project `second-brain`, deployed from `main` of
 `github.com/Bhuvanesh66/nexus`; every push to `main` is a production deploy, other branches get previews).
 
-The demo is a simulation with deterministic sample data. It makes no network calls and needs no API keys.
+- `/` the landing page, with an in-browser demo of the loop (sample data, no network calls).
+- `/auth/sign-in` → Google (Supabase Auth) → `/dashboard`: **Drop** (notes, YouTube, articles, posts on X),
+  **Hand off** (five output modes, cited sources, Copy, Open in Gmail) and **Your Vault** (search, details,
+  connections, delete).
+- `/stats` public totals: people signed up, fragments dropped, hand-offs answered.
 
 ## Run it
 
@@ -30,20 +34,51 @@ npm run test:e2e     # Playwright: desktop, phone and reduced-motion projects (r
 `test:e2e` starts `next start` on port 3200 and drives the installed Google Chrome. To use Playwright's own
 Chromium instead, run `npx playwright install chromium` and set `PW_CHANNEL=""`.
 
-## Sign-in is a placeholder
+## Services and configuration
 
-The spec's Google OAuth (Supabase Auth) does not exist in this repository yet. Every "Try Nexus free" and
-"Sign in" link points at `SIGN_IN_HREF` in `lib/site.ts`, which resolves to `/sign-in`: a page that says
-plainly that sign-in is not connected. To wire the real flow, either set `NEXT_PUBLIC_SIGN_IN_URL` to the
-route that calls `supabase.auth.signInWithOAuth`, or replace `app/sign-in/page.tsx` with that route. The
-links never prefetch, so a real OAuth start route will not be touched by a prefetch.
+Copy `.env.example` to `.env.local` (or `vercel env pull .env.local`).
+
+| What | Where it is configured | Status |
+| --- | --- | --- |
+| Supabase project `nexus` (`okiivqojobjwrbncozuf`, Mumbai) | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` on Vercel | Live; schema from `supabase/migrations/` |
+| Google sign-in | Supabase dashboard → Authentication → Sign In / Providers → Google | Needs a Google OAuth client (below) |
+| Claude (Haiku 5.5 to summarise, Sonnet 5.5 to write) | `ANTHROPIC_API_KEY`, or `AI_GATEWAY_API_KEY` | Not set yet |
+| Embeddings (`text-embedding-3-small`, 1536-d) | `OPENAI_API_KEY`, or `AI_GATEWAY_API_KEY` | Not set yet |
+
+Without Claude, drops are saved with a plain extract labelled "Basic summary" and connections are matched by
+shared keywords (and say so); Hand off shows the fragments it would use but does not write. Without
+embeddings, retrieval uses the keyword backup only.
+
+**Turn on Google sign-in**
+
+1. Google Cloud Console → APIs & Services → Credentials → Create credentials → OAuth client ID → Web application.
+2. Authorised JavaScript origin: `https://second-brain-six-swart.vercel.app`.
+   Authorised redirect URI: `https://okiivqojobjwrbncozuf.supabase.co/auth/v1/callback`.
+3. Supabase dashboard → project `nexus` → Authentication → Sign In / Providers → Google: enable, paste the client
+   ID and secret, save. The site URL and redirect allow-list are already set (`supabase/config.toml`).
+
+**Turn on the AI**: in Vercel → project `second-brain` → Settings → Environment Variables, add
+`ANTHROPIC_API_KEY` and `OPENAI_API_KEY` (Production and Preview), then redeploy. Or add a card to the Vercel team
+and set `AI_GATEWAY_API_KEY` (one key for both).
+
+**Database changes**: add a file to `supabase/migrations/`, then `supabase db push` (the CLI is linked to
+`nexus`).
 
 ## Where things live
 
 | Path | What it is |
 | --- | --- |
 | `app/page.tsx` | The landing page: hero with the demo, Why now, the comparison, the three eras, the footer. |
-| `app/sign-in/page.tsx` | The honest sign-in placeholder. |
+| `app/auth/*` | Google sign-in start, OAuth callback, sign-out. `proxy.ts` refreshes the session and guards `/dashboard`. |
+| `app/sign-in/page.tsx` | Continue with Google, or a plain explanation when sign-in can't start. |
+| `app/dashboard/page.tsx`, `components/app/` | The signed-in app: Drop, Hand off, Your Vault, the fragment dialog. |
+| `app/api/capture` | Detect → fetch → Claude summary (8.1) → embed → nearest fragments → Claude connections (8.2) → save. |
+| `app/api/ask` | Embed the task → `match_captures` (0.6, top 8) + keyword backup → Claude (8.3/8.4) → cited sources. |
+| `app/api/captures` | Vault list, one fragment with its connections, delete. |
+| `app/stats/page.tsx` | Public totals via `nexus_stats()`. |
+| `lib/ai.ts`, `lib/prompts.ts` | AI providers, and every prompt in one place. |
+| `lib/ingest/` | YouTube transcripts, article extraction (Readability), posts on X (oEmbed), the no-AI extract. |
+| `supabase/migrations/` | Tables, row-level security, `match_captures`, `keyword_captures`, `nexus_stats`. |
 | `components/demo/demo-data.ts` | All demo content: stages and timings, captures, connections, the three tasks and their answers. |
 | `components/demo/demo-machine.ts` | The demo state machine (idle, playing, paused, stepped, done; task, answer view, source focus). |
 | `components/demo/demo.css` | The demo's styles and its stage timeline (see the comment at the top of the file). |
@@ -80,14 +115,7 @@ mentor Priya; the generic AI answers; the footer line "Built for Airtribe AI Bui
 Bengaluru". The accelerator names are made up on purpose, so the demo never implies a partnership with a real
 programme.
 
-Claims that come from the positioning edits and should be checked before launch:
+Claims that come from the positioning edits and should be checked before launch: the three Why now figures and
+their sources (Indeed 2026, Kalaari Capital, BCG 2025) and "No credit card. Free during beta."
 
-- The three Why now figures and their sources (Indeed 2026: 919% creator economy growth in India, 2020 to
-  early 2026; Kalaari Capital: 80M creators in India; BCG 2025: $1T+ creator-influenced spending by 2030).
-- "No credit card. Free during beta."
-- The composer placeholder and the Drop step invite reels, voice notes and screenshots, and the demo now
-  drops an Instagram reel and sends applications on the visitor's behalf. `product.md` lists Instagram, voice
-  and autonomous execution as roadmap, not MVP. The demo is labelled as a demo; the hero's last line still
-  names what works today.
-
-The page claims no privacy policy, customers or integrations.
+The page claims no customers or integrations. The app says "Your Vault is private. Nexus doesn’t train AI on your data." (spec 10.5).

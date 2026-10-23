@@ -1,13 +1,11 @@
 /**
  * Site-wide constants for the public landing page.
  *
- * Sign-in: the product spec calls for Google OAuth through Supabase Auth, which is not wired up in this
- * repository yet. Every "Try Nexus free" and "Sign in" link points at SIGN_IN_HREF. Until the auth flow
- * exists it resolves to /sign-in, an honest placeholder page. To connect the real flow, either set
- * NEXT_PUBLIC_SIGN_IN_URL (for example to the route that calls supabase.auth.signInWithOAuth) or replace
- * app/sign-in/page.tsx with that route.
+ * Every "Try Nexus free" and "Sign in" link points at SIGN_IN_HREF, the route that starts Google sign-in
+ * through Supabase Auth (or goes straight to the dashboard when the visitor is already signed in). It is a
+ * route handler, so the links are plain anchors, not client-side navigations.
  */
-export const SIGN_IN_HREF = process.env.NEXT_PUBLIC_SIGN_IN_URL || "/sign-in";
+export const SIGN_IN_HREF = "/auth/sign-in";
 
 export const SITE_NAME = "Nexus";
 

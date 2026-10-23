@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { DemoSection } from "@/components/demo/DemoSection";
 import { ArrowIcon, InstagramLogo, PdfLogo, XLogo, YouTubeShortsLogo } from "@/components/icons";
 import { cssVars } from "@/lib/css";
@@ -36,10 +35,10 @@ export function Hero() {
           </p>
           <div className={`${styles.actions} ${styles.load}`}>
             {/* Never prefetch sign-in: once it starts a real OAuth flow, a prefetch must not touch it. */}
-            <Link className="button" href={SIGN_IN_HREF} prefetch={false}>
+            <a className="button" href={SIGN_IN_HREF}>
               Try Nexus free
               <ArrowIcon className="button-arrow" size={18} weight={2.25} />
-            </Link>
+            </a>
             <WatchDemoLink className={styles.watch} iconClassName={styles.watchIcon} />
           </div>
           <p className={`${styles.trust} ${styles.load}`}>No credit card. Free during beta.</p>

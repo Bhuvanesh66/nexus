@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { ArrowIcon } from "@/components/icons";
 import { cssVars } from "@/lib/css";
 import { SIGN_IN_HREF } from "@/lib/site";
@@ -12,8 +11,8 @@ export function SiteFooter() {
     <footer className={styles.footer}>
       <div className={styles.board}>
         <div className={`${styles.tile} ${styles.scope}`} data-reveal="" style={cssVars({ "--i": 0 })}>
-          <p className={styles.scopeText}>This demo runs in your browser. Nothing is saved.</p>
-          <p className={styles.small}>People and notes in the demo are illustrative samples.</p>
+          <p className={styles.scopeText}>The demo above runs in your browser and saves nothing.</p>
+          <p className={styles.small}>People and notes in it are illustrative samples. Sign in and what you drop is saved to your own private Vault.</p>
         </div>
 
         <nav className={`${styles.tile} ${styles.nav}`} aria-label="Footer" data-reveal="" style={cssVars({ "--i": 1 })}>
@@ -25,9 +24,9 @@ export function SiteFooter() {
               <a href="#different">Why Nexus</a>
             </li>
             <li>
-              <Link href={SIGN_IN_HREF} prefetch={false}>
+              <a href={SIGN_IN_HREF}>
                 Sign in
-              </Link>
+              </a>
             </li>
           </ul>
         </nav>
@@ -51,10 +50,10 @@ export function SiteFooter() {
 
         <div className={`${styles.tile} ${styles.cta}`} data-reveal="" style={cssVars({ "--i": 2 })}>
           <h2 className={styles.ctaHeading}>The layer that comes after notebooks.</h2>
-          <Link href={SIGN_IN_HREF} prefetch={false} className={styles.ctaButton}>
+          <a href={SIGN_IN_HREF} className={styles.ctaButton}>
             Try Nexus free
             <ArrowIcon className={styles.arrow} size={18} weight={2.25} />
-          </Link>
+          </a>
         </div>
       </div>
     </footer>

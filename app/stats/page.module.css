@@ -1,0 +1,76 @@
+.main {
+  display: grid;
+  align-content: start;
+  gap: clamp(2rem, 5vw, 3.5rem);
+  min-height: calc(100svh - 4rem);
+  padding: clamp(2rem, 6vw, 5rem) var(--margin) 6rem;
+}
+
+.title {
+  font-size: var(--step-display);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.035em;
+}
+
+.title span {
+  color: var(--teal-strong);
+}
+
+.figures {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--gutter);
+  margin: 0;
+}
+
+.figure {
+  display: flex;
+  flex-direction: column-reverse;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  min-height: 16rem;
+  padding: clamp(1.25rem, 3vw, 2rem);
+  border-radius: 20px;
+  background: var(--ink);
+  color: var(--on-ink);
+}
+
+.figure dt {
+  color: var(--on-ink-muted);
+  font-size: var(--step-lead);
+}
+
+.figure dd {
+  margin: 0;
+  font-size: clamp(4rem, 1rem + 9vw, 8.5rem);
+  font-weight: 700;
+  line-height: 0.95;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+}
+
+.figure[data-tone="teal"] dd {
+  color: var(--teal-bright);
+}
+.figure[data-tone="sky"] dd {
+  color: var(--sky);
+}
+.figure[data-tone="violet"] dd {
+  color: var(--violet-bright);
+}
+
+.note {
+  max-width: 40rem;
+  color: var(--muted);
+}
+
+@media (max-width: 760px) {
+  .figures {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .figure {
+    min-height: 0;
+  }
+}

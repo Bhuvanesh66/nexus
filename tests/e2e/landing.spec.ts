@@ -27,7 +27,7 @@ test.describe("landing page", () => {
     await expect(page.getByText("Nexus is where everything you’ve learned meets the task you’re doing")).toBeVisible();
     const cta = page.getByRole("link", { name: "Try Nexus free" }).first();
     await expect(cta).toBeVisible();
-    await expect(cta).toHaveAttribute("href", "/sign-in");
+    await expect(cta).toHaveAttribute("href", "/auth/sign-in");
     await expect(page.getByText("No credit card. Free during beta.")).toBeVisible();
     await expect(page.getByRole("list", { name: "What you can drop" }).getByRole("listitem")).toHaveText([
       /^Instagram reels/,
@@ -86,7 +86,7 @@ test.describe("landing page", () => {
 
     const footer = page.locator("footer");
     await expect(footer.getByRole("heading", { name: "The layer that comes after notebooks." })).toBeAttached();
-    await expect(footer.getByRole("link", { name: "Try Nexus free" })).toHaveAttribute("href", "/sign-in");
+    await expect(footer.getByRole("link", { name: "Try Nexus free" })).toHaveAttribute("href", "/auth/sign-in");
     await expect(footer).toContainText("© 2026 Nexus. Built for Airtribe AI Builders Day ’26 — October 24, Bengaluru.");
   });
 
@@ -113,11 +113,27 @@ test.describe("landing page", () => {
     }
   });
 
-  test("the primary action leads to the honest sign-in placeholder", async ({ page }) => {
+  test("the primary action starts Google sign-in, or says plainly why it can't", async ({ page }) => {
     await page.goto("/");
     await page.getByRole("link", { name: "Try Nexus free" }).first().click();
-    await expect(page).toHaveURL(/\/sign-in$/, { timeout: 10_000 });
-    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Sign-in isn’t connected yet");
+    // Google enabled: the browser leaves for Supabase/Google. Not yet enabled: an honest page, no raw error.
+    await expect(page).toHaveURL(/supabase\.co\/auth|accounts\.google\.com|\/sign-in\?error=/, { timeout: 15_000 });
+    if (page.url().includes("/sign-in?error=")) {
+      await expect(page.getByRole("heading", { level: 1 })).toHaveText(/isn’t switched on yet|isn’t connected/);
+    }
+  });
+
+  test("the dashboard and the app's API need a session", async ({ page, request }) => {
+    await page.goto("/dashboard");
+    await expect(page).toHaveURL(/\/sign-in/);
+    const res = await request.get("/api/captures");
+    expect(res.status()).toBe(401);
+  });
+
+  test("the stats page shows totals only", async ({ page }) => {
+    await page.goto("/stats");
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText(/Nexus,\s*live\./);
+    await expect(page.getByText("Totals only")).toBeVisible();
   });
 
   test("keyboard focus reaches the primary action with a visible ring", async ({ page }, info) => {
