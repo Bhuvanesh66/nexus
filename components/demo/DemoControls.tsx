@@ -24,6 +24,7 @@ export const StepBar = memo(function StepBar({ current, onJump, onTogglePlay, on
                 data-step={stage.id}
                 aria-current={current === stage.id ? "step" : undefined}
                 aria-label={`${stage.label}, step ${i + 1} of ${STAGES.length}`}
+                aria-describedby={`sb-now-${stage.id}`}
                 onClick={() => onJump(stage.id)}
               >
                 <span className="sb-track" aria-hidden="true">
@@ -52,10 +53,17 @@ export const StepBar = memo(function StepBar({ current, onJump, onTogglePlay, on
           </button>
         </div>
       </div>
+      {/* The current step written out: its name, its place in the six and what happens in it. All six share
+          one cell, so the line keeps the height of the longest and nothing below it moves. */}
       <p className="sb-now" aria-hidden="true">
         {STAGES.map((stage, i) => (
           <span key={stage.id} data-now={stage.id}>
-            <b>{stage.label}</b> · {i + 1} of {STAGES.length}
+            <b>{stage.label}</b>
+            <span className="sb-now-count">
+              {" "}
+              · {i + 1} of {STAGES.length} ·{" "}
+            </span>
+            <span id={`sb-now-${stage.id}`}>{stage.description}</span>
           </span>
         ))}
       </p>
@@ -72,7 +80,7 @@ export const TaskBar = memo(function TaskBar({ taskId, onTask }: TaskBarProps) {
   return (
     <div className="sb-tasks">
       <span className="sb-tasks-label" id="sb-tasks-label">
-        Try a task
+        Hand it a task
       </span>
       <div className="sb-task-chips" role="group" aria-labelledby="sb-tasks-label">
         {TASKS.map((task) => (

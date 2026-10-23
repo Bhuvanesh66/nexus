@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BrainMark } from "@/components/icons";
+import { NexusMark } from "@/components/icons";
 import { SIGN_IN_HREF } from "@/lib/site";
 import styles from "./SiteHeader.module.css";
 
@@ -10,18 +10,18 @@ export function SiteHeader({ links = true }: { links?: boolean }) {
         Skip to content
       </a>
       <Link href="/" className={styles.wordmark}>
-        <BrainMark size={22} />
-        <span translate="no">Second Brain</span>
+        <NexusMark size={24} />
+        <span translate="no">Nexus</span>
       </Link>
       <nav aria-label="Primary">
         <ul className={styles.links}>
           {links ? (
             <>
               <li className={styles.wide}>
-                <Link href="/#demo">Demo</Link>
+                <Link href="/#demo">See it work</Link>
               </li>
               <li className={styles.wide}>
-                <Link href="/#different">Why it’s different</Link>
+                <Link href="/#different">Why Nexus</Link>
               </li>
             </>
           ) : null}

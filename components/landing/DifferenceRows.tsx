@@ -10,7 +10,7 @@ import {
   type AnswerRow,
   type CaptureId,
 } from "@/components/demo/demo-data";
-import { BrainMark, GlobeIcon } from "@/components/icons";
+import { GlobeIcon, VaultMark } from "@/components/icons";
 import { cssVars } from "@/lib/css";
 import styles from "./Difference.module.css";
 
@@ -18,8 +18,8 @@ import styles from "./Difference.module.css";
 const TASK = TASK_BY_ID.email;
 
 /**
- * Three states of one email: without your Brain, the captures it draws on, and the email that uses them.
- * The captures are live: pointing at one, or choosing it, lights the words it produced.
+ * Three states of one email: without your Vault, the fragments it draws on, and the email that uses them.
+ * The fragments are live: pointing at one, or choosing it, lights the words it produced.
  */
 export function DifferenceRows() {
   const [selected, setSelected] = useState<CaptureId>("numbers");
@@ -39,18 +39,18 @@ export function DifferenceRows() {
           <Email rows={TASK.generic} active={null} {...source} />
           <p className={styles.foot}>
             <GlobeIcon size={14} />
-            General knowledge only. 0 memories used.
+            General knowledge only. 0 fragments used.
           </p>
         </div>
         <p className={styles.rowNote}>Fluent and polite. It doesn’t know Rajesh, so it reaches for the buzzwords he dislikes.</p>
       </div>
 
       <div className={styles.row} data-reveal="" style={cssVars({ "--i": 2 })}>
-        <h3 className={styles.rowLabel}>What you saved</h3>
+        <h3 className={styles.rowLabel}>What you dropped</h3>
         <div className={styles.frag} data-ui="">
           <p className={styles.fragTitle} id="saved-title">
-            <BrainMark size={14} />
-            In your Brain
+            <VaultMark size={14} />
+            In your Vault
           </p>
           <ul className={styles.notes} aria-labelledby="saved-title">
             {TASK.recalled.map((id) => {
@@ -82,22 +82,22 @@ export function DifferenceRows() {
             })}
           </ul>
           <p id="saved-hint" className="sr-only">
-            Highlights the words this capture produced in the Second Brain email.
+            Highlights the words this fragment produced in the Nexus email.
           </p>
         </div>
         <p className={styles.rowNote}>
-          Saved over six weeks, with no folders or tags. Point at one to see the words it produced.
+          Dropped over six weeks, with no folders or tags. Point at one to see the words it produced.
         </p>
       </div>
 
       <div className={styles.row} data-reveal="" style={cssVars({ "--i": 3 })}>
-        <h3 className={styles.rowLabel}>Second Brain</h3>
+        <h3 className={styles.rowLabel}>Nexus</h3>
         <div className={styles.frag} data-ui="">
           <p className={styles.prompt}>{TASK.prompt}</p>
           <Email rows={TASK.rows} active={active} {...source} />
           <p className={styles.foot}>
-            <BrainMark size={14} />
-            {TASK.recalled.length} memories used, plus general knowledge.
+            <VaultMark size={14} />
+            {TASK.recalled.length} fragments used, plus general knowledge.
           </p>
         </div>
         <p className={styles.rowNote}>
@@ -136,14 +136,14 @@ function Email({ rows, active, onHover, onSelect }: EmailProps) {
                     className={styles.chip}
                     data-kind="brain"
                     data-hit={active === id ? "true" : undefined}
-                    aria-label={`From your Brain: ${CAPTURE_BY_ID[id].title}`}
+                    aria-label={`From your Vault: ${CAPTURE_BY_ID[id].title}`}
                     onPointerEnter={() => onHover(id)}
                     onPointerLeave={() => onHover(null)}
                     onFocus={() => onHover(id)}
                     onBlur={() => onHover(null)}
                     onClick={() => onSelect(id)}
                   >
-                    <BrainMark size={11} />
+                    <VaultMark size={11} />
                     {CAPTURE_BY_ID[id].short}
                   </button>
                 ))}

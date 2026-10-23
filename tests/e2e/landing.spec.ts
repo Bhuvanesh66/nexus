@@ -22,15 +22,56 @@ test.describe("landing page", () => {
   test("states the pitch, offers one primary action and logs no errors", async ({ page }) => {
     const problems = watchForProblems(page);
     await page.goto("/");
-    await expect(page.getByRole("heading", { level: 1 })).toHaveText(
-      /Stop collecting\.\s*Start remembering\.\s*Start doing\./,
-    );
-    await expect(page.getByText("Drop in what you learn. Second Brain connects the dots")).toBeVisible();
-    const cta = page.getByRole("link", { name: "Try Free with Google" }).first();
+    await expect(page).toHaveTitle("Nexus — Beyond memory.");
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText(/^Beyond\s*memory\.$/);
+    await expect(page.getByText("Nexus is where everything you’ve learned meets the task you’re doing")).toBeVisible();
+    const cta = page.getByRole("link", { name: "Try Nexus free" }).first();
     await expect(cta).toBeVisible();
     await expect(cta).toHaveAttribute("href", "/sign-in");
+    await expect(page.getByText("No credit card. Free during beta.")).toBeVisible();
     await page.waitForTimeout(2500);
     expect(problems).toEqual([]);
+  });
+
+  test("uses the Nexus name and vocabulary throughout", async ({ page }) => {
+    await page.goto("/");
+    const text = await page.locator("body").innerText();
+    for (const old of ["Second Brain", "My Brain", "memories used", "Try Free with Google"]) {
+      expect(text, `no “${old}” left on the page`).not.toContain(old);
+    }
+    // Read from the markup: the phone header shows only "Sign in" by design.
+    await expect(page.locator('nav[aria-label="Primary"] a')).toHaveText([
+      "See it work",
+      "Why Nexus",
+      "Sign in",
+    ]);
+  });
+
+  test("proves the shift with three sourced figures, then the eras and the close", async ({ page }) => {
+    await page.goto("/");
+    const whyNow = page.locator("#why-now");
+    await expect(whyNow.getByRole("heading", { level: 2 })).toHaveText("The world is learning in fragments.");
+    await expect(whyNow.getByText("Nobody built the layer for that.")).toBeAttached();
+    await expect(whyNow.getByRole("listitem")).toHaveCount(3);
+    await expect(whyNow.getByText(/^Source: /)).toHaveText([
+      "Source: Indeed, 2026",
+      "Source: Kalaari Capital, Creator Economy Report",
+      "Source: BCG, From Content to Commerce, 2025",
+    ]);
+    await expect(whyNow.getByText("Until now.")).toBeAttached();
+
+    const eras = page.locator("#eras");
+    await expect(eras.getByRole("heading", { level: 3 })).toHaveText([
+      "Era 1: The Mind",
+      "Era 2: The Shelf",
+      "Era 3: Nexus",
+    ]);
+    await expect(eras.getByText("5,000 years.")).toBeAttached();
+
+    const footer = page.locator("footer");
+    await expect(footer.getByRole("heading", { name: "The layer that comes after notebooks." })).toBeAttached();
+    await expect(footer.getByRole("link", { name: "Try Nexus free" })).toHaveAttribute("href", "/sign-in");
+    await expect(footer).toContainText("© 2026 Nexus. Built for Airtribe AI Builders Day ’26 — October 24, Bengaluru.");
   });
 
   test("never scrolls sideways", async ({ page }) => {
@@ -46,7 +87,7 @@ test.describe("landing page", () => {
     const fold = page.viewportSize()!.height;
     for (const locator of [
       page.getByRole("heading", { level: 1 }),
-      page.getByRole("link", { name: "Try Free with Google" }).first(),
+      page.getByRole("link", { name: "Try Nexus free" }).first(),
       page.locator("#demo [data-ui]"),
     ]) {
       const box = await locator.boundingBox();
@@ -58,9 +99,9 @@ test.describe("landing page", () => {
 
   test("the primary action leads to the honest sign-in placeholder", async ({ page }) => {
     await page.goto("/");
-    await page.getByRole("link", { name: "Try Free with Google" }).first().click();
+    await page.getByRole("link", { name: "Try Nexus free" }).first().click();
     await expect(page).toHaveURL(/\/sign-in$/, { timeout: 10_000 });
-    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Google sign-in isn’t connected yet");
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Sign-in isn’t connected yet");
   });
 
   test("keyboard focus reaches the primary action with a visible ring", async ({ page }, info) => {
@@ -69,10 +110,10 @@ test.describe("landing page", () => {
     for (let i = 0; i < 12; i++) {
       await page.keyboard.press("Tab");
       const name = await page.evaluate(() => document.activeElement?.textContent?.trim());
-      if (name === "Try Free with Google") break;
+      if (name === "Try Nexus free") break;
     }
     const focused = page.locator(":focus");
-    await expect(focused).toHaveText("Try Free with Google");
+    await expect(focused).toHaveText("Try Nexus free");
     const outline = await focused.evaluate((el) => getComputedStyle(el).outlineStyle);
     expect(outline).not.toBe("none");
   });
@@ -91,7 +132,7 @@ test.describe("demo", () => {
     test.skip(info.project.name === "reduced-motion", "covered by the reduced-motion block");
   });
 
-  test("plays capture to create on its own and rests on the result", async ({ page }) => {
+  test("plays drop to deliver on its own and rests on the result", async ({ page }) => {
     test.setTimeout(60_000);
     await startDemo(page);
     await expect(demo(page)).toHaveAttribute("data-status", "playing", { timeout: 5_000 });
@@ -117,24 +158,28 @@ test.describe("demo", () => {
 
   test("replay starts the story again", async ({ page }) => {
     await startDemo(page);
-    await demo(page).getByRole("button", { name: /Create, step 6 of 6/ }).click();
+    await demo(page).getByRole("button", { name: /Deliver, step 6 of 6/ }).click();
     await expect(demo(page)).toHaveAttribute("data-stage", "create");
     await demo(page).getByRole("button", { name: "Replay" }).click();
     await expect(demo(page)).toHaveAttribute("data-stage", "capture");
     await expect(demo(page)).toHaveAttribute("data-status", "playing");
   });
 
-  test("each step button shows its stage", async ({ page }) => {
+  test("each step button shows its stage and says what happens in it", async ({ page }) => {
     await startDemo(page);
-    const recall = demo(page).getByRole("button", { name: /Recall, step 5 of 6/ });
-    await recall.click();
+    const surface = demo(page).getByRole("button", { name: /Surface, step 5 of 6/ });
+    await surface.click();
     await expect(demo(page)).toHaveAttribute("data-stage", "recall");
     await expect(demo(page)).toHaveAttribute("data-status", "stepped");
-    await expect(recall).toHaveAttribute("aria-current", "step");
+    await expect(surface).toHaveAttribute("aria-current", "step");
+    await expect(surface).toHaveAccessibleDescription("Nexus pulls every fragment that matters for that task.");
+    const line = demo(page).locator('.sb-now > [data-now="recall"]');
+    await expect(line).toBeVisible();
+    await expect(line).toHaveText("Surface · 5 of 6 · Nexus pulls every fragment that matters for that task.");
     await expect(demo(page).locator('[data-recalled="true"]')).toHaveCount(4);
   });
 
-  test("task chips change the task, the recalled memories and the answer", async ({ page }) => {
+  test("task chips change the task, the surfaced fragments and the answer", async ({ page }) => {
     test.setTimeout(60_000);
     await startDemo(page);
     const chip = demo(page).getByRole("button", { name: "Draft an email" });
@@ -153,7 +198,7 @@ test.describe("demo", () => {
 
   test("choosing a source lights the sentences it produced", async ({ page }) => {
     await startDemo(page);
-    await demo(page).getByRole("button", { name: /Create, step 6 of 6/ }).click();
+    await demo(page).getByRole("button", { name: /Deliver, step 6 of 6/ }).click();
     await expect(demo(page).locator('.sb-answer[data-variant="brain"]').getByText("Opening line")).toBeVisible();
     const card = demo(page).getByRole("button", { name: /^Rajesh \(Accel\) prefers numbers/ });
     await card.click();
@@ -163,20 +208,20 @@ test.describe("demo", () => {
     await expect(lit).toHaveText("Skip the buzzwords; he prefers numbers.");
   });
 
-  test("the generic answer can be compared with the Brain's", async ({ page }) => {
+  test("the generic answer can be compared with the Vault's", async ({ page }) => {
     await startDemo(page);
-    await demo(page).getByRole("button", { name: /Create, step 6 of 6/ }).click();
+    await demo(page).getByRole("button", { name: /Deliver, step 6 of 6/ }).click();
     const generic = demo(page).getByRole("button", { name: "Generic AI" });
     await expect(generic).toBeVisible();
     await generic.click();
     await expect(demo(page)).toHaveAttribute("data-answer", "generic");
     await expect(demo(page).getByText("“Thanks for your time. Let me share our vision.”")).toBeVisible();
-    await expect(demo(page).getByText("General knowledge only. 0 memories used.")).toBeVisible();
+    await expect(demo(page).getByText("General knowledge only. 0 fragments used.")).toBeVisible();
   });
 
-  test("“Watch the 20-second demo” replays the demo and moves focus to it", async ({ page }) => {
+  test("“See a fragment become work” replays the demo and moves focus to it", async ({ page }) => {
     await page.goto("/");
-    await page.getByRole("link", { name: "Watch the 20-second demo" }).click();
+    await page.getByRole("link", { name: "See a fragment become work (20s)" }).click();
     await expect(demo(page)).toBeFocused();
     await expect(demo(page)).toHaveAttribute("data-stage", "capture");
     await expect(demo(page)).toHaveAttribute("data-status", "playing");

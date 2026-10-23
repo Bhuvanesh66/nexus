@@ -17,7 +17,7 @@ export function WatchDemoLink({ className, iconClassName }: { className?: string
       <span className={iconClassName} aria-hidden="true">
         <PlayIcon size={14} />
       </span>
-      Watch the 20-second demo
+      See a fragment become work (20s)
     </a>
   );
 }

@@ -12,18 +12,56 @@ export type AppTab = "dump" | "ask";
 export interface Stage {
   id: StageId;
   label: string;
+  /** One line on what happens in the stage, shown under the step bar. */
+  description: string;
   /** How long the stage holds during a full play-through, in ms. */
   duration: number;
   tab: AppTab;
 }
 
 export const STAGES: readonly Stage[] = [
-  { id: "capture", label: "Capture", duration: 2800, tab: "dump" },
-  { id: "understand", label: "Understand", duration: 3400, tab: "dump" },
-  { id: "connect", label: "Connect", duration: 3000, tab: "dump" },
-  { id: "ask", label: "Ask", duration: 2400, tab: "ask" },
-  { id: "recall", label: "Recall", duration: 3000, tab: "ask" },
-  { id: "create", label: "Create", duration: 4000, tab: "ask" },
+  {
+    id: "capture",
+    label: "Drop",
+    description: "Paste a reel, link, voice note, screenshot, or anything you just learned.",
+    duration: 2800,
+    tab: "dump",
+  },
+  {
+    id: "understand",
+    label: "Absorb",
+    description: "Nexus reads it, understands it, pulls out what matters.",
+    duration: 3400,
+    tab: "dump",
+  },
+  {
+    id: "connect",
+    label: "Connect",
+    description: "Every new fragment gets stitched to related ones you’ve dropped before.",
+    duration: 3000,
+    tab: "dump",
+  },
+  {
+    id: "ask",
+    label: "Hand off",
+    description: "Name a task: “prep for this meeting”, “draft this email”, “plan this move”.",
+    duration: 2400,
+    tab: "ask",
+  },
+  {
+    id: "recall",
+    label: "Surface",
+    description: "Nexus pulls every fragment that matters for that task.",
+    duration: 3000,
+    tab: "ask",
+  },
+  {
+    id: "create",
+    label: "Deliver",
+    description: "Finished work. The email drafted. The brief written. The next move ready.",
+    duration: 4000,
+    tab: "ask",
+  },
 ];
 
 export const STAGE_BY_ID = Object.fromEntries(STAGES.map((s) => [s.id, s])) as Record<StageId, Stage>;
@@ -66,11 +104,11 @@ export interface Capture {
   title: string;
   /** Label used on source chips. */
   short: string;
-  /** ISO date the capture was saved; the new capture is saved "today" during the demo. */
+  /** ISO date the fragment was dropped; the new one is dropped "today" during the demo. */
   savedOn: string | null;
 }
 
-/** My Brain, newest first. The first entry is the capture the demo adds. */
+/** The Vault, newest first. The first entry is the fragment the demo drops in. */
 export const CAPTURES: readonly Capture[] = [
   { id: "podcast", kind: "youtube", title: "Seed round prep: what investors check first", short: "Seed prep podcast", savedOn: null },
   { id: "metrics", kind: "note", title: "Our October numbers: 1,240 paying learners, +18% a month", short: "Your October numbers", savedOn: "2026-10-02" },
@@ -91,7 +129,7 @@ export function savedLabel(capture: Capture): string {
   return capture.savedOn ? SAVED_FORMAT.format(new Date(`${capture.savedOn}T00:00:00Z`)) : "Today";
 }
 
-/** What the Understand stage pulls out of the new YouTube capture. */
+/** What the Absorb stage pulls out of the new YouTube fragment. */
 export const NEW_CAPTURE_INSIGHT = {
   link: "youtube.com/watch?v=seed-round-prep",
   source: "YouTube · 42 min",
@@ -104,7 +142,7 @@ export const NEW_CAPTURE_INSIGHT = {
   keywords: ["seed round", "traction", "first meetings"],
 } as const;
 
-/** Links the Connect stage draws from the new capture. Not every capture is connected. */
+/** Links the Connect stage draws from the new fragment. Not every fragment is connected. */
 export const CONNECTIONS: readonly { to: CaptureId; reason: string }[] = [
   { to: "metrics", reason: "your traction figures" },
   { to: "numbers", reason: "both say lead with numbers" },
@@ -116,9 +154,9 @@ export type OutputMode = "Full Prep Brief" | "Draft Email" | "Action Steps";
 
 export interface AnswerPart {
   text: string;
-  /** Captures this sentence came from. */
+  /** Fragments this sentence came from. */
   from?: readonly CaptureId[];
-  /** Marks a sentence that comes from general AI knowledge rather than the user's Brain. */
+  /** Marks a sentence that comes from general AI knowledge rather than the user's Vault. */
   general?: boolean;
 }
 
@@ -133,11 +171,11 @@ export interface Task {
   prompt: string;
   mode: OutputMode;
   outputTitle: string;
-  /** Captures the Recall stage lights up, in the order they appear in My Brain. */
+  /** Fragments the Surface stage lights up, in the order they appear in the Vault. */
   recalled: readonly CaptureId[];
   generalTopic: string;
   rows: readonly AnswerRow[];
-  /** The same request answered without the user's Brain. */
+  /** The same request answered without the user's Vault. */
   generic: readonly AnswerRow[];
   narration: { recall: string; create: string };
 }
@@ -182,8 +220,8 @@ export const TASKS: readonly Task[] = [
       { label: "Opening line", parts: [{ text: "“Thanks for your time. Let me share our vision.”" }] },
     ],
     narration: {
-      recall: "Recall: four memories light up and flow into the task, alongside general knowledge about seed pitches.",
-      create: "Create: a prep brief arrives, and every personal detail shows the capture it came from.",
+      recall: "Surface: four fragments light up and flow into the task, alongside general knowledge about seed pitches.",
+      create: "Deliver: a prep brief arrives, and every personal detail shows the fragment it came from.",
     },
   },
   {
@@ -218,8 +256,8 @@ export const TASKS: readonly Task[] = [
       },
     ],
     narration: {
-      recall: "Recall: three memories come back, your numbers, how Rajesh likes to be pitched and the podcast you just saved.",
-      create: "Create: the draft sticks to numbers, because you once noted that Rajesh prefers them.",
+      recall: "Surface: three fragments come back, your numbers, how Rajesh likes to be pitched and the podcast you just dropped.",
+      create: "Deliver: the draft sticks to numbers, because you once noted that Rajesh prefers them.",
     },
   },
   {
@@ -249,8 +287,8 @@ export const TASKS: readonly Task[] = [
       { label: "Fridays", parts: [{ text: "Follow up with every investor." }] },
     ],
     narration: {
-      recall: "Recall: a different set lights up for this task, including the Accel article and a weekly-review tweet.",
-      create: "Create: a six-week plan built from what you saved, with general advice marked as such.",
+      recall: "Surface: a different set lights up for this task, including the Accel article and a weekly-review tweet.",
+      create: "Deliver: a six-week plan built from what you dropped, with general advice marked as such.",
     },
   },
 ];
@@ -263,13 +301,13 @@ export const DEFAULT_TASK_ID: TaskId = "meeting";
 export function narrationFor(stage: StageId, task: Task): string {
   switch (stage) {
     case "capture":
-      return "Capture: a YouTube link is dropped into Second Brain.";
+      return "Drop: a YouTube link is dropped into Nexus.";
     case "understand":
-      return "Understand: it reads the video and pulls out a title, a summary and the key takeaway.";
+      return "Absorb: Nexus reads the video and pulls out a title, a summary and the key takeaway.";
     case "connect":
-      return "Connect: the new capture is linked to three things you saved earlier.";
+      return "Connect: the new fragment is stitched to three you dropped before.";
     case "ask":
-      return `Ask: ${task.prompt}`;
+      return `Hand off: ${task.prompt}`;
     case "recall":
       return task.narration.recall;
     case "create":

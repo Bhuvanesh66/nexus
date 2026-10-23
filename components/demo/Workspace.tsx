@@ -1,9 +1,10 @@
 import { memo } from "react";
-import { BrainMark, CheckIcon, GlobeIcon, LinkIcon, YouTubeIcon } from "@/components/icons";
+import { CheckIcon, GlobeIcon, LinkIcon, VaultMark, YouTubeIcon } from "@/components/icons";
 import { cssVars } from "@/lib/css";
 import { Beat } from "./Beat";
 import {
   BEATS,
+  CAPTURES,
   CAPTURE_BY_ID,
   CONNECTIONS,
   NEW_CAPTURE_INSIGHT as INSIGHT,
@@ -64,7 +65,7 @@ export const DumpView = memo(function DumpView({ tab }: { tab: AppTab }) {
       <div className="sb-composer">
         <span className="sb-stack">
           <Beat out="capture" o={B.link} className="sb-placeholder">
-            Paste a link, type a note, dump anything you just learned…
+            Drop a reel, link, voice note, or anything you just learned…
           </Beat>
           <Beat at="capture" d={B.link} a="sb-fade" className="sb-linktext">
             <YouTubeIcon size={14} />
@@ -76,9 +77,9 @@ export const DumpView = memo(function DumpView({ tab }: { tab: AppTab }) {
         </span>
       </div>
 
-      <Beat as="article" at="capture" d={B.card} className="sb-capture" aria-label="New capture">
+      <Beat as="article" at="capture" d={B.card} className="sb-capture" aria-label="New fragment">
         <div className="sb-process">
-          <ProcessStep label="Reading" active={["capture", B.card]} done={["understand", 0]} />
+          <ProcessStep label="Absorbing" active={["capture", B.card]} done={["understand", 0]} />
           <ProcessStep label="Understanding" pending active={["understand", 0]} done={["connect", 0]} />
           <ProcessStep label="Connecting" pending active={["connect", 0]} done={["connect", C.done]} />
         </div>
@@ -112,7 +113,10 @@ export const DumpView = memo(function DumpView({ tab }: { tab: AppTab }) {
         </div>
 
         <Beat as="div" at="connect" d={C.confirm} className="sb-connected">
-          <p className="sb-connected-lead">Got it. Connected to 3 things you already saved:</p>
+          <p className="sb-connected-lead">
+            <b>Absorbed.</b> Vault weight: {CAPTURES.length} fragments.
+          </p>
+          <p className="sb-connected-sub">Connected to {CONNECTIONS.length} you dropped before:</p>
           <ul className="sb-relations">
             {CONNECTIONS.map((link, i) => (
               <Beat as="li" key={link.to} at="connect" d={C.pill + i * C.pillGap} className="sb-relation">
@@ -161,7 +165,7 @@ export const AskView = memo(function AskView({ tab, task, focusId, answer, onAns
             Mode: <b>{task.mode}</b>
           </Beat>
           <span className="sb-btn" data-press="ask" style={cssVars({ "--p": A.press })}>
-            Ask
+            Hand off
           </span>
         </div>
       </div>
@@ -169,21 +173,21 @@ export const AskView = memo(function AskView({ tab, task, focusId, answer, onAns
       <Beat as="div" at="recall" a="sb-fade" className="sb-status" data-variant="brain">
         <div className="sb-status-steps">
           <ProcessStep
-            label="Checking what you’ve taught me"
-            doneLabel="Checked your Brain"
+            label="Pulling fragments"
+            doneLabel="Fragments pulled"
             active={["recall", 0]}
             done={["recall", R.checked]}
           />
           <ProcessStep
-            label="Combining with general knowledge"
-            doneLabel="Added general knowledge"
+            label="Combining them"
+            doneLabel="Here. Done."
             active={["recall", R.general]}
             done={["recall", R.combined]}
           />
         </div>
         <div className="sb-status-sources">
-          <span className="sb-memories">
-            <BrainMark size={12} />
+          <span className="sb-fragments">
+            <VaultMark size={12} />
             <span className="sb-roll" aria-hidden="true">
               <span className="sb-roll-strip" style={cssVars({ "--n": used, "--d": R.first })}>
                 {Array.from({ length: used + 1 }, (_, n) => (
@@ -191,7 +195,7 @@ export const AskView = memo(function AskView({ tab, task, focusId, answer, onAns
                 ))}
               </span>
             </span>
-            <span className="sr-only">{used}</span> memories used
+            <span className="sr-only">{used}</span> fragments used
           </span>
           <Beat at="recall" d={R.general} className="sb-general">
             <GlobeIcon size={12} />
@@ -201,7 +205,7 @@ export const AskView = memo(function AskView({ tab, task, focusId, answer, onAns
       </Beat>
       <div className="sb-status" data-variant="generic">
         <GlobeIcon size={13} />
-        <span className="sb-generic-note">General knowledge only. 0 memories used.</span>
+        <span className="sb-generic-note">General knowledge only. 0 fragments used.</span>
       </div>
 
       <Beat as="div" at="create" className="sb-output" role="group" aria-label={task.outputTitle}>
@@ -209,7 +213,7 @@ export const AskView = memo(function AskView({ tab, task, focusId, answer, onAns
           <p className="sb-output-title">{task.outputTitle}</p>
           <Beat at="create" d={K.compare} className="sb-compare" role="group" aria-label="Compare answers">
             <button type="button" aria-pressed={answer === "brain"} onClick={() => onAnswer("brain")}>
-              With your Brain
+              With your Vault
             </button>
             <button type="button" aria-pressed={answer === "generic"} onClick={() => onAnswer("generic")}>
               Generic AI
@@ -273,14 +277,14 @@ function Part({
           className="sb-chip"
           data-kind="brain"
           data-hit={focusId === id ? "true" : undefined}
-          aria-label={`From your Brain: ${CAPTURE_BY_ID[id].title}`}
+          aria-label={`From your Vault: ${CAPTURE_BY_ID[id].title}`}
           onPointerEnter={() => onHover(id)}
           onPointerLeave={() => onHover(null)}
           onFocus={() => onHover(id)}
           onBlur={() => onHover(null)}
           onClick={() => onSelect(id)}
         >
-          <BrainMark size={11} />
+          <VaultMark size={11} />
           {CAPTURE_BY_ID[id].short}
         </button>
       ))}

@@ -28,13 +28,13 @@ export const BrainColumn = memo(function BrainColumn({ task, focusId, selected, 
   return (
     <div className="sb-brain">
       <div className="sb-brain-head">
-        <span className="sb-brain-title">My Brain</span>
+        <span className="sb-brain-title">Your Vault</span>
         <span className="sb-brain-count">
           <Beat out="capture" o={BEATS.capture.slot}>
-            5 captures
+            {CAPTURES.length - 1} fragments
           </Beat>
           <Beat at="capture" d={BEATS.capture.slot} a="sb-fade">
-            6 captures
+            {CAPTURES.length} fragments
           </Beat>
         </span>
       </div>
@@ -69,7 +69,7 @@ export const BrainColumn = memo(function BrainColumn({ task, focusId, selected, 
 
 interface CaptureCardProps extends SourceHandlers {
   capture: Capture;
-  /** Position in the task's recall order, or -1 when this task does not use the capture. */
+  /** Position in the task's surface order, or -1 when this task does not use the fragment. */
   recallIndex: number;
   hit: boolean;
   pressed: boolean;

@@ -1,0 +1,115 @@
+/* Why now: a field of ink between the white hero and the grey comparison. The claim top-left, three
+   figures at display size across the 12 columns, and the turn ("Until now.") answering from the right. */
+.section {
+  margin-top: clamp(4.5rem, 9vw, 8rem);
+  padding: clamp(5rem, 9vw, 8.5rem) var(--margin);
+  background: var(--ink);
+  color: var(--on-ink);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  column-gap: var(--gutter);
+}
+
+.head {
+  grid-column: 1 / 10;
+}
+
+/* the claim in white, and the gap it leaves in grey at the same size */
+.heading,
+.gap {
+  font-family: var(--font-display);
+  font-size: var(--step-head);
+  font-weight: 700;
+  line-height: 1.06;
+  letter-spacing: -0.03em;
+}
+
+.gap {
+  color: var(--on-ink-muted);
+}
+
+.stats {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: subgrid;
+  row-gap: 3rem;
+  margin-top: clamp(3.5rem, 7vw, 6.5rem);
+}
+
+.stat {
+  grid-column: span 4;
+  display: grid;
+  align-content: start;
+  gap: 0.9rem;
+}
+
+.figure {
+  font-family: var(--font-display);
+  font-size: clamp(4.5rem, 1.5rem + 7.4vw, 8.75rem);
+  font-weight: 700;
+  line-height: 0.9;
+  letter-spacing: -0.055em;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.context {
+  max-width: 26ch;
+  font-size: var(--step-body);
+  line-height: 1.45;
+}
+
+.source {
+  color: var(--on-ink-muted);
+  font-size: var(--step-small);
+  line-height: 1.45;
+}
+
+@media (min-width: 1080px) {
+  /* the hero headline's size, so the page has one display size */
+  .figure {
+    font-size: min(8.4vw, 8.75rem);
+  }
+}
+
+.turn {
+  grid-column: 7 / -1;
+  justify-self: end;
+  margin-top: clamp(5rem, 8vw, 7rem);
+  font-family: var(--font-display);
+  font-size: var(--step-display);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.04em;
+}
+
+@media (max-width: 899px) {
+  .head,
+  .turn {
+    grid-column: 1 / -1;
+  }
+
+  .turn {
+    justify-self: start;
+  }
+}
+
+@media (min-width: 600px) and (max-width: 899px) {
+  .figure {
+    font-size: 10vw;
+  }
+}
+
+/* stacked, each source stays with its own figure: the next figure starts well clear of it */
+@media (max-width: 599px) {
+  .stats {
+    row-gap: 5rem;
+  }
+
+  .stat {
+    grid-column: 1 / -1;
+  }
+}

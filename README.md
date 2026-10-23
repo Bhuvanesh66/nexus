@@ -1,8 +1,12 @@
-# Second Brain: landing page
+# Nexus: landing page
 
-The public landing page for Second Brain (Airtribe AI Builders Day ’26), built from `product.md`,
-`opus_master_prompt.md` and `Second_Brain_Feature_Spec_Designed.md`. The page explains the product with an
-interactive demo of the loop the app will run: capture → understand → connect → ask → recall → create.
+The public landing page for Nexus (formerly Second Brain; Airtribe AI Builders Day ’26), built from `product.md`,
+`opus_master_prompt.md`, `Second_Brain_Feature_Spec_Designed.md` and the Nexus positioning edits. The page
+explains the product with an interactive demo of the loop the app will run: drop → absorb → connect → hand off
+→ surface → deliver.
+
+Live: https://second-brain-six-swart.vercel.app (Vercel project `second-brain`, deployed from `main` of
+`github.com/Bhuvanesh66/nexus`; every push to `main` is a production deploy, other branches get previews).
 
 The demo is a simulation with deterministic sample data. It makes no network calls and needs no API keys.
 
@@ -28,8 +32,8 @@ Chromium instead, run `npx playwright install chromium` and set `PW_CHANNEL=""`.
 
 ## Sign-in is a placeholder
 
-The spec's Google OAuth (Supabase Auth) does not exist in this repository yet. Every "Try Free with Google"
-and "Sign in" link points at `SIGN_IN_HREF` in `lib/site.ts`, which resolves to `/sign-in`: a page that says
+The spec's Google OAuth (Supabase Auth) does not exist in this repository yet. Every "Try Nexus free" and
+"Sign in" link points at `SIGN_IN_HREF` in `lib/site.ts`, which resolves to `/sign-in`: a page that says
 plainly that sign-in is not connected. To wire the real flow, either set `NEXT_PUBLIC_SIGN_IN_URL` to the
 route that calls `supabase.auth.signInWithOAuth`, or replace `app/sign-in/page.tsx` with that route. The
 links never prefetch, so a real OAuth start route will not be touched by a prefetch.
@@ -38,14 +42,14 @@ links never prefetch, so a real OAuth start route will not be touched by a prefe
 
 | Path | What it is |
 | --- | --- |
-| `app/page.tsx` | The landing page: hero with the demo, the comparison section, the footer. |
+| `app/page.tsx` | The landing page: hero with the demo, Why now, the comparison, the three eras, the footer. |
 | `app/sign-in/page.tsx` | The honest sign-in placeholder. |
 | `components/demo/demo-data.ts` | All demo content: stages and timings, captures, connections, the three tasks and their answers. |
 | `components/demo/demo-machine.ts` | The demo state machine (idle, playing, paused, stepped, done; task, answer view, source focus). |
 | `components/demo/demo.css` | The demo's styles and its stage timeline (see the comment at the top of the file). |
 | `components/demo/SecondBrainDemo.tsx` | The client root: timer, autoplay on view, pause when hidden, controls. |
 | `components/demo/DemoSection.tsx` | Server wrapper with the inline script that starts the demo from the beginning without a flash. |
-| `components/landing/` | Hero, comparison section, the "Watch the 20-second demo" link, section reveals. |
+| `components/landing/` | Hero, Why now (sourced figures), comparison, eras, the "See a fragment become work" link, reveals. |
 | `components/site/` | Header and footer. |
 | `tests/e2e/landing.spec.ts` | End-to-end checks for the page and every demo interaction. |
 
@@ -54,10 +58,11 @@ How the demo behaves:
 - It plays once (about 19 seconds) when it scrolls into view, then rests on the result. It pauses itself when
   scrolled away or when the tab is hidden, and never restarts on its own.
 - Pause, Play and Replay, plus a button for each stage, are above the product panel.
-- "Try a task" chips (prep for a meeting, draft an email, plan a project) replay ask, recall and create for that
-  task; each task recalls a different set of saved captures.
-- Pointing at or choosing a capture lights the sentences it produced; the chips in the answer work the other way.
-- "With your Brain / Generic AI" compares the answer with and without the user's captures.
+- "Hand it a task" chips (prep for a meeting, draft an email, plan a project) replay hand off, surface and
+  deliver for that task; each task surfaces a different set of fragments.
+- A line under the step bar names the current step and says what happens in it.
+- Pointing at or choosing a fragment lights the sentences it produced; the chips in the answer work the other way.
+- "With your Vault / Generic AI" compares the answer with and without the user's fragments.
 - With reduced motion requested, the finished result is shown at once; Play still steps through the stages
   with fades only. Without script, the finished result is what renders.
 
@@ -66,7 +71,14 @@ How the demo behaves:
 All people, notes and numbers inside the demo are illustrative. They follow the briefs, but please confirm or
 replace them: Rajesh from Accel and the notes about him; "Our October numbers: 1,240 paying learners, +18% a
 month"; the podcast "Seed round prep: what investors check first" (42 min); the saved dates (Jul 18 to Oct 2);
-the three generic answers; the footer line "Built for Airtribe AI Builders Day ’26, October 24, 2026".
+the three generic answers; the footer line "Built for Airtribe AI Builders Day ’26 — October 24, Bengaluru".
 
-The page claims no privacy policy, customers, metrics or integrations. Roadmap items from the spec (voice,
-WhatsApp, PDF, Gmail execution) are not mentioned as available.
+Claims that come from the positioning edits and should be checked before launch:
+
+- The three Why now figures and their sources (Indeed 2026: 919% creator economy growth in India, 2020 to
+  early 2026; Kalaari Capital: 80M creators in India; BCG 2025: $1T+ creator-influenced spending by 2030).
+- "No credit card. Free during beta."
+- The composer placeholder and the Drop step invite reels, voice notes and screenshots; `product.md` lists
+  voice and Instagram as roadmap, not MVP. The hero's last line still names what works today.
+
+The page claims no privacy policy, customers or integrations.

@@ -18,10 +18,10 @@ export default function SignInPage() {
     <>
       <SiteHeader links={false} />
       <main id="main" className={styles.main}>
-        <h1 className={styles.title}>Google sign-in isn’t connected yet</h1>
+        <h1 className={styles.title}>Sign-in isn’t connected yet</h1>
         <p className={styles.text}>
-          This preview of Second Brain runs the interactive demo only. Nothing here creates an account or signs you
-          in.
+          This preview of <span translate="no">Nexus</span> runs the interactive demo only. Nothing here creates an
+          account or signs you in.
         </p>
         <Link className="button" href="/#demo">
           Back to the demo

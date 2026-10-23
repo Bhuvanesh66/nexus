@@ -72,7 +72,7 @@ export function useGeometry(ref: RefObject<HTMLElement | null>): Geometry | null
 
 const f = (n: number) => Math.round(n * 10) / 10;
 
-/** A curve in the lane to the left of My Brain, from one capture to another. */
+/** A curve in the lane to the left of the Vault, from one fragment to another. */
 function arcPath(a: Box, b: Box): string {
   const y1 = a.y + a.h / 2;
   const y2 = b.y + b.h / 2;
@@ -83,7 +83,7 @@ function arcPath(a: Box, b: Box): string {
 /**
  * A wire from a recalled capture into the task. Beside the task (wide frames) it runs right, along its own
  * lane and in at the task's left edge; above the task (narrow frames) it runs down the lane on the right
- * of the captures and in at the task's top edge. Lanes are ordered so the wires never cross.
+ * of the fragments and in at the task’s top edge. Lanes are ordered so the wires never cross.
  */
 function recallPath(card: Box, anchor: Box, i: number, n: number): string {
   const x1 = card.x + card.w;

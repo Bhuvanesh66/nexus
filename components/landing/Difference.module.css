@@ -1,7 +1,7 @@
 /* One answer in three states, stacked on a 12-column grid: state words right-aligned in columns 1–3, the
-   product's own rows in columns 4–9. The section sits on its own field so it reads apart from the hero. */
+   product's own rows in columns 4–9. The section sits on its own grey field, between the ink of Why now and
+   the white of the eras. */
 .section {
-  margin-top: var(--section);
   padding: clamp(5rem, 9vw, 8.5rem) var(--margin);
   background: var(--surface);
   scroll-margin-top: 0;
@@ -16,8 +16,7 @@
 .heading {
   grid-column: 4 / -1;
   margin-bottom: clamp(2.5rem, 6vw, 6rem);
-  /* the head step, allowed down to 26px so each sentence keeps one line on a phone */
-  font-size: clamp(1.625rem, 1rem + 2.6vw, 3rem);
+  font-size: var(--step-head);
   font-weight: 700;
   line-height: 1.06;
   letter-spacing: -0.03em;

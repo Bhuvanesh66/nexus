@@ -1,5 +1,5 @@
 /*
- * Second Brain demo: frame, interface fragment and stage timeline.
+ * Nexus demo: frame, interface fragment and stage timeline.
  *
  * How the timeline works
  * - The root (.sb-demo) carries data-stage (current stage), data-reached (stages reached so far, space
@@ -122,9 +122,9 @@
   animation: sb-fill calc(var(--dur) * var(--tempo) * 1ms) linear both;
 }
 
-/* the current step, written out, for narrow frames where the step labels do not fit */
+/* the current step, written out under the bar; the six lines share one cell, so its height never changes */
 .sb-now {
-  display: none;
+  display: grid;
   margin-top: -4px;
   color: var(--muted);
   font-size: 13px;
@@ -132,7 +132,8 @@
 }
 
 .sb-now > span {
-  display: none;
+  grid-area: 1 / 1;
+  visibility: hidden;
 }
 
 .sb-demo[data-stage="capture"] .sb-now > [data-now="capture"],
@@ -141,12 +142,16 @@
 .sb-demo[data-stage="ask"] .sb-now > [data-now="ask"],
 .sb-demo[data-stage="recall"] .sb-now > [data-now="recall"],
 .sb-demo[data-stage="create"] .sb-now > [data-now="create"] {
-  display: inline;
+  visibility: visible;
 }
 
 .sb-now b {
   color: var(--ink);
   font-weight: 600;
+}
+
+.sb-now-count {
+  color: var(--ui-faint);
 }
 
 .sb-transport {
@@ -330,7 +335,7 @@
   grid-template-columns: minmax(0, 0.84fr) minmax(0, 1.16fr);
 }
 
-/* My Brain: the captures, newest first. The left padding is the lane the connections are drawn in. */
+/* Your Vault: the fragments, newest first. The left padding is the lane the connections are drawn in. */
 [data-ui] .sb-brain {
   min-width: 0;
   padding: 12px 12px 14px 30px;
@@ -369,7 +374,7 @@
   padding-bottom: 0;
 }
 
-/* the new capture's slot opens when it is saved, pushing the older captures down */
+/* the new fragment's slot opens when it is dropped, pushing the older ones down */
 [data-ui] .sb-cards > li.sb-slot {
   display: grid;
   grid-template-rows: 0fr;
@@ -462,7 +467,7 @@
   }
 }
 
-/* recalled captures light up in the accent; the rest step back */
+/* surfaced fragments light up in the accent; the rest step back */
 .sb-demo[data-reached~="recall"]:not([data-answer="generic"]) [data-ui] .sb-card[data-recalled="true"] {
   border-color: var(--accent);
   background: var(--accent-tint);
@@ -486,7 +491,7 @@
   border-color: var(--ink);
 }
 
-/* the workspace: two views (Dump and Ask) stacked in one cell so its height never changes */
+/* the workspace: two views (Drop and Hand off) stacked in one cell so its height never changes */
 [data-ui] .sb-work {
   display: grid;
   min-width: 0;
@@ -715,7 +720,17 @@
 
 [data-ui] .sb-connected-lead {
   font-size: 12.5px;
-  font-weight: 500;
+}
+
+[data-ui] .sb-connected-lead b {
+  font-weight: 600;
+}
+
+[data-ui] .sb-connected-sub {
+  margin-bottom: 1px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 16px;
 }
 
 [data-ui] .sb-relations {
@@ -763,7 +778,7 @@
   text-overflow: ellipsis;
 }
 
-/* Ask view */
+/* Hand off view */
 [data-ui] .sb-taskbox {
   display: grid;
   gap: 8px;
@@ -829,8 +844,8 @@
   gap: 6px;
 }
 
-/* the two kinds of knowledge, side by side: what you saved (accent) and what AI knows (grey) */
-[data-ui] .sb-memories,
+/* the two kinds of knowledge, side by side: what you dropped (accent) and what AI knows (grey) */
+[data-ui] .sb-fragments,
 [data-ui] .sb-general {
   display: inline-flex;
   align-items: center;
@@ -842,7 +857,7 @@
   white-space: nowrap;
 }
 
-[data-ui] .sb-memories {
+[data-ui] .sb-fragments {
   background: var(--accent-tint);
   color: var(--accent-text);
   font-weight: 600;
@@ -1131,7 +1146,7 @@
     animation-delay: calc(var(--o, 0) * var(--tempo) * 1ms);
   }
 
-  /* Send and Ask are pressed */
+  /* Send and Hand off are pressed */
   .sb-demo:is([data-status="playing"], [data-status="paused"], [data-status="stepped"])[data-stage="capture"] [data-press="capture"],
   .sb-demo:is([data-status="playing"], [data-status="paused"], [data-status="stepped"])[data-stage="ask"] [data-press="ask"] {
     animation: sb-press 320ms var(--ease-out) both;
@@ -1144,7 +1159,7 @@
     animation-delay: calc(var(--slot, 0) * var(--tempo) * 1ms);
   }
 
-  /* moving from Dump to Ask */
+  /* moving from Drop to Hand off */
   .sb-demo:is([data-status="playing"], [data-status="paused"], [data-status="stepped"])[data-stage="ask"] [data-ui] .sb-view[data-view="ask"] {
     animation: sb-view-in 360ms var(--ease-out) 80ms both;
   }
@@ -1153,7 +1168,7 @@
     animation: sb-view-out 200ms var(--ease-exit) both;
   }
 
-  /* recalled captures light up one by one, each ringing once, and a pulse travels to the task */
+  /* surfaced fragments light up one by one, each ringing once, and a pulse travels to the task */
   .sb-demo:is([data-status="playing"], [data-status="paused"], [data-status="stepped"])[data-stage="recall"]:not([data-answer="generic"]) [data-ui] .sb-card[data-recalled="true"] {
     animation: sb-lit 360ms var(--ease-out) both;
     animation-delay: calc(var(--lit, 0) * var(--tempo) * 1ms);
@@ -1176,6 +1191,16 @@
 
   [data-ui] button.sb-chip[data-hit="true"] {
     animation: sb-pulse 520ms var(--ease-out);
+  }
+
+  /* the step line changes with a short fade */
+  .sb-demo[data-stage="capture"] .sb-now > [data-now="capture"],
+  .sb-demo[data-stage="understand"] .sb-now > [data-now="understand"],
+  .sb-demo[data-stage="connect"] .sb-now > [data-now="connect"],
+  .sb-demo[data-stage="ask"] .sb-now > [data-now="ask"],
+  .sb-demo[data-stage="recall"] .sb-now > [data-now="recall"],
+  .sb-demo[data-stage="create"] .sb-now > [data-now="create"] {
+    animation: sb-fade 240ms ease both;
   }
 }
 
@@ -1434,10 +1459,6 @@
 
   .sb-step-label {
     display: none;
-  }
-
-  .sb-now {
-    display: block;
   }
 
   [data-ui] .sb-appbar {

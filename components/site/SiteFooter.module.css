@@ -1,4 +1,5 @@
-/* The close is the last two rows of a board of filled tiles, every cell used. */
+/* The close is the last two rows of a board of filled tiles, every cell used. The accent tile carries the
+   closing line and the last primary action. */
 .footer {
   padding: var(--section) var(--margin) var(--margin);
 }
@@ -7,9 +8,9 @@
   display: grid;
   grid-template-columns: repeat(12, minmax(0, 1fr));
   grid-template-areas:
-    "statement statement statement statement nav nav nav event event scope scope scope"
-    "mark mark mark mark mark mark mark mark cta cta cta cta";
-  grid-template-rows: minmax(13.75rem, auto) minmax(20rem, auto);
+    "scope scope scope scope scope nav nav nav event event event event"
+    "mark mark mark mark mark mark cta cta cta cta cta cta";
+  grid-template-rows: minmax(13.75rem, auto) minmax(22rem, auto);
   gap: 8px;
 }
 
@@ -24,8 +25,8 @@
   background: var(--surface);
 }
 
-.statement {
-  grid-area: statement;
+.scope {
+  grid-area: scope;
 }
 
 .nav {
@@ -35,10 +36,7 @@
 
 .event {
   grid-area: event;
-}
-
-.scope {
-  grid-area: scope;
+  justify-content: flex-end;
 }
 
 .mark {
@@ -52,20 +50,13 @@
 
 .cta {
   grid-area: cta;
+  padding: 24px;
   background: var(--accent);
   color: var(--accent-ink);
-  text-decoration: none;
-  transition:
-    background-color var(--t-hover) ease,
-    transform var(--t-press) var(--ease-out);
 }
 
-.cta:active {
-  transform: scale(0.99);
-}
-
-.statementText,
-.ctaText {
+.scopeText {
+  max-width: 24ch;
   font-family: var(--font-display);
   font-size: var(--step-lead);
   font-weight: 600;
@@ -76,6 +67,12 @@
 .small {
   color: var(--muted);
   font-size: var(--step-small);
+  line-height: 1.45;
+}
+
+.eventText {
+  max-width: 30ch;
+  font-size: var(--step-body);
   line-height: 1.45;
 }
 
@@ -95,23 +92,55 @@
   transition: text-decoration-color var(--t-hover) ease;
 }
 
-.scopeText {
-  margin-top: auto;
-  font-size: var(--step-body);
-  line-height: 1.45;
-}
-
 .wordmark {
   font-family: var(--font-display);
-  font-size: clamp(3.25rem, 9vw, 9.5rem);
+  font-size: clamp(5rem, 15vw, 14rem);
   font-weight: 700;
-  line-height: 1.05;
-  letter-spacing: -0.045em;
+  line-height: 1;
+  letter-spacing: -0.06em;
   white-space: nowrap;
 }
 
+.ctaHeading {
+  max-width: 20ch;
+  font-size: var(--step-head);
+  font-weight: 700;
+  line-height: 1.06;
+  letter-spacing: -0.03em;
+}
+
+/* the page's one button, inverted to stand on the accent */
+.ctaButton {
+  display: inline-flex;
+  align-self: flex-start;
+  align-items: center;
+  gap: 0.6rem;
+  min-height: 3.25rem;
+  padding: 0 1.4rem;
+  border-radius: var(--radius);
+  background: var(--bg);
+  color: var(--accent-text);
+  font-size: var(--step-body);
+  font-weight: 600;
+  line-height: 1.2;
+  text-decoration: none;
+  white-space: nowrap;
+  transition:
+    transform var(--t-press) var(--ease-out),
+    background-color var(--t-hover) ease;
+}
+
+.ctaButton:active {
+  transform: scale(0.97);
+}
+
+.ctaButton:focus-visible {
+  outline-color: var(--bg);
+  outline-offset: 3px;
+}
+
 .arrow {
-  align-self: flex-end;
+  flex: none;
   transition: transform var(--t-ui) var(--ease-out);
 }
 
@@ -120,18 +149,15 @@
     text-decoration-color: currentColor;
   }
 
-  .cta:hover {
-    background: var(--accent-strong);
-  }
-
-  .cta:hover .arrow {
-    transform: translateX(6px);
+  .ctaButton:hover {
+    background: var(--accent-tint);
   }
 }
 
-.cta:focus-visible {
-  outline-color: var(--ink);
-  outline-offset: 3px;
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .ctaButton:hover .arrow {
+    transform: translateX(3px);
+  }
 }
 
 @media (max-width: 899px) {
@@ -140,20 +166,23 @@
     grid-template-areas:
       "mark mark"
       "cta cta"
-      "nav scope"
-      "event statement";
-    grid-template-rows: 10rem minmax(10rem, auto) auto auto;
+      "nav event"
+      "scope scope";
+    grid-template-rows: 10rem minmax(15rem, auto) auto auto;
     gap: 6px;
   }
 
   .wordmark {
-    font-size: clamp(2.5rem, 12.5vw, 6rem);
+    font-size: clamp(4rem, 26vw, 9rem);
+  }
+
+  .cta {
+    padding: 20px;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .cta:active,
-  .cta:hover .arrow {
+  .ctaButton:active {
     transform: none;
   }
 }

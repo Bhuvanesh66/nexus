@@ -1,0 +1,155 @@
+/* Three eras on one time axis, drawn like the demo's step bar: a grey track runs under the three columns and
+   each era fills it to scale in ink. The third, Nexus, is a point in the accent that begins now. */
+.section {
+  padding: clamp(6rem, 11vw, 9.5rem) var(--margin) 0;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  column-gap: var(--gutter);
+}
+
+.heading {
+  grid-column: 1 / 10;
+  margin-bottom: clamp(3.5rem, 7vw, 6rem);
+  font-size: var(--step-head);
+  font-weight: 700;
+  line-height: 1.06;
+  letter-spacing: -0.03em;
+}
+
+.headLine {
+  display: block;
+}
+
+.eras {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: subgrid;
+  row-gap: 3.5rem;
+}
+
+.era {
+  grid-column: span 4;
+  display: grid;
+  align-content: start;
+}
+
+/* the axis: the track runs on through the gutter to the next era, so the three read as one line of time */
+.time {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 14px;
+  margin-right: calc(var(--gutter) * -1);
+  margin-bottom: 1.75rem;
+}
+
+.time::before {
+  content: "";
+  position: absolute;
+  inset: 4px 0;
+  background: var(--surface);
+}
+
+.era:last-child .time {
+  margin-right: 0;
+}
+
+.bar {
+  position: relative;
+  width: max(6px, calc(var(--scale) * (100% - var(--gutter))));
+  height: 6px;
+  border-radius: 1px;
+  background: var(--ink);
+  transform-origin: 0 50%;
+}
+
+.point {
+  position: relative;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+.span {
+  font-weight: 600;
+}
+
+.name {
+  font-size: var(--step-head);
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: -0.035em;
+}
+
+.text {
+  max-width: 30ch;
+  margin-top: 1rem;
+  font-size: var(--step-body);
+  line-height: 1.5;
+}
+
+/* the sentence that ends each era steps back; the third era's is the point of the page, so it does not */
+.turn {
+  color: var(--muted);
+}
+
+.era[data-now] .turn {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* the bars draw out along the axis as their era reveals; the point keeps a slow pulse */
+  .js .era[data-reveal] .bar {
+    transition: transform 1100ms var(--ease-expo);
+    transition-delay: calc(240ms + var(--i, 0) * 80ms);
+  }
+
+  .js:not(.reveal-all) .era[data-reveal]:not([data-revealed]) .bar {
+    transform: scaleX(0);
+  }
+
+  .point::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: var(--accent);
+    animation: era-now 2400ms var(--ease-out) infinite;
+  }
+}
+
+@keyframes era-now {
+  from {
+    opacity: 0.45;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(2.6);
+  }
+}
+
+@media (max-width: 899px) {
+  .heading {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 599px) {
+  .era {
+    grid-column: 1 / -1;
+  }
+
+  .time {
+    margin-right: 0;
+  }
+
+  .bar {
+    width: max(6px, calc(var(--scale) * 100%));
+  }
+}

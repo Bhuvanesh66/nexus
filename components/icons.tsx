@@ -24,10 +24,30 @@ function Icon({ size = 16, children, ...rest }: IconProps) {
 }
 
 /**
- * The Second Brain mark: two overlapping circles, what you have learned and what AI knows.
- * Filled, so it reads at 12px as well as in the favicon.
+ * The Nexus mark: an N on an accent tile, two uprights joined where they meet. Used beside the name.
+ * Filled, so it reads at 16px as well as in the favicon (app/icon.svg draws the same shape).
  */
-export function BrainMark({ size = 20, ...rest }: IconProps) {
+export function NexusMark({ size = 20, ...rest }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true" focusable="false" {...rest}>
+      <rect width="24" height="24" rx="6" fill="currentColor" />
+      <path
+        d="M8 16.5v-9l8 9v-9"
+        fill="none"
+        stroke="#fff"
+        strokeWidth="2.4"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+/**
+ * The Vault mark: two overlapping circles, what you have dropped and what AI knows. Marks anything that
+ * came from the visitor's own fragments (source chips, the "fragments used" count).
+ */
+export function VaultMark({ size = 20, ...rest }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true" focusable="false" {...rest}>
       <circle cx="9" cy="12" r="7" fill="currentColor" />
@@ -122,13 +142,14 @@ export function ReplayIcon(props: IconProps) {
   );
 }
 
-export function ArrowIcon({ size = 64, ...rest }: IconProps) {
+/** A plain arrow; its stroke keeps the same weight in px at any size. */
+export function ArrowIcon({ size = 64, weight = 4, ...rest }: IconProps & { weight?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false" {...rest}>
       <path
         d="M3 12h17M13 5l7 7-7 7"
         stroke="currentColor"
-        strokeWidth={4}
+        strokeWidth={weight}
         vectorEffect="non-scaling-stroke"
         strokeLinecap="square"
       />

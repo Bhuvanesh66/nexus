@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useEffectEvent, useReducer, useRef, type CSSProperties } from "react";
-import { BrainMark, PlayIcon } from "@/components/icons";
+import { NexusMark, PlayIcon } from "@/components/icons";
 import { BrainColumn } from "./BrainColumn";
 import { StepBar, TaskBar } from "./DemoControls";
 import { TASK_BY_ID, narrationFor, type AppTab, type CaptureId, type StageId, type Task, type TaskId } from "./demo-data";
@@ -151,7 +151,7 @@ export function SecondBrainDemo() {
       ref={rootRef}
       id="demo"
       role="region"
-      aria-label="Second Brain in action: interactive demo with sample notes"
+      aria-label="Nexus in action: interactive demo with sample notes"
       tabIndex={-1}
       className="sb-demo"
       data-demo=""
@@ -187,7 +187,7 @@ export function SecondBrainDemo() {
         {announcement}
       </p>
       <p id="sb-source-hint" className="sr-only">
-        Highlights where this capture is used in the answer.
+        Highlights where this fragment is used in the answer.
       </p>
     </div>
   );
@@ -205,7 +205,7 @@ interface AppFragmentProps {
   onPlay: () => void;
 }
 
-/** The product itself, as the dashboard will look: Dump, Ask and My Brain. Remounted for every fresh run. */
+/** The product itself, as the dashboard will look: Drop, Hand off and Your Vault. Remounted for every fresh run. */
 function AppFragment({ tab, task, focusId, selected, answer, onAnswer, onHover, onSelect, onPlay }: AppFragmentProps) {
   const bodyRef = useRef<HTMLDivElement>(null);
   const geometry = useGeometry(bodyRef);
@@ -213,18 +213,18 @@ function AppFragment({ tab, task, focusId, selected, answer, onAnswer, onHover, 
     <div className="sb-app" data-ui="">
       <div className="sb-appbar" aria-hidden="true">
         <span className="sb-appname" translate="no">
-          <BrainMark size={16} />
-          Second Brain
+          <NexusMark size={16} />
+          Nexus
         </span>
         <span className="sb-tabs">
           <span className="sb-tab" data-tab-id="dump">
-            Dump
+            Drop
           </span>
           <span className="sb-tab" data-tab-id="ask">
-            Ask
+            Hand off
           </span>
           <span className="sb-tab" data-tab-id="brain">
-            My Brain
+            Your Vault
           </span>
         </span>
         <span className="sb-account">Demo account</span>
@@ -247,7 +247,7 @@ function AppFragment({ tab, task, focusId, selected, answer, onAnswer, onHover, 
             <p>Watch a YouTube link become a prep brief in about 20 seconds.</p>
             <button type="button" className="sb-idle-play" onClick={onPlay}>
               <PlayIcon size={14} />
-              Play the demo
+              See it live
             </button>
           </div>
         </div>

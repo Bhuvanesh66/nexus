@@ -1,4 +1,4 @@
-/** Window event other parts of the page use to drive the demo (the hero's "Watch the 20-second demo"). */
+/** Window event other parts of the page use to drive the demo (the hero’s “See a fragment become work”). */
 export const DEMO_EVENT = "secondbrain:demo";
 
 export interface DemoCommand {
