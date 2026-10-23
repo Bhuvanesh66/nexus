@@ -207,8 +207,9 @@ export function parseJson(text: string): unknown {
 /**
  * One Gemini call that heals itself: if the model isn't available to this key (404), it asks Google which
  * models are and takes the newest that fits the slot; if the model refuses the request (400, which Gemini
- * often reports without naming the field), it drops the thinking setting, then JSON mode. Lessons are kept
- * for the life of the server instance.
+ * often reports without naming the field), it drops the thinking setting, then JSON mode; if the model is
+ * overloaded or rate-limited (429, 500, 503), it hands this one call to the other Flash model. Lessons about
+ * models and settings are kept for the life of the server instance.
  */
 async function gemini(
   slot: GeminiSlot,
@@ -218,14 +219,22 @@ async function gemini(
 ) {
   const key = process.env.GEMINI_API_KEY as string;
   let model = geminiModels[slot] ?? GEMINI_DEFAULTS[slot];
-  for (let attempt = 0; attempt < 4; attempt++) {
+  let standIn = false;
+  for (let attempt = 0; attempt < 5; attempt++) {
     const res = await send(`${GEMINI_URL}/${model}:${method}`, { "x-goog-api-key": key }, body(model), signal);
     if (res.ok) {
-      if (geminiModels[slot] !== model) console.info(`Gemini: ${model} answers for ${slot}`);
-      geminiModels[slot] = model;
+      if (!standIn && geminiModels[slot] !== model) console.info(`Gemini: ${model} answers for ${slot}`);
+      if (!standIn) geminiModels[slot] = model;
       return res.json();
     }
     const detail = await res.text().catch(() => "");
+    if ([429, 500, 503].includes(res.status) && method === "generateContent" && !standIn) {
+      const other: ModelTier = slot === "fast" ? "smart" : "fast";
+      console.warn(`Gemini ${model} is busy (${res.status}); handing this call to the ${other} model`);
+      model = geminiModels[other] ?? GEMINI_DEFAULTS[other];
+      standIn = true;
+      continue;
+    }
     if (res.status === 404) {
       const found = await geminiDiscover(slot, key);
       if (found && found !== model) {
