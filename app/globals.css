@@ -1,0 +1,235 @@
+/*
+ * Second Brain landing page: tokens and base styles.
+ * Brand (product spec 6.3): white ground, #111 ink, one indigo accent (--accent), the system font stack,
+ * rounded 8px controls, no gradients. Every colour downstream references these tokens.
+ */
+:root {
+  color-scheme: light;
+
+  --bg: #ffffff;
+  --surface: #f3f4f6;
+  --surface-strong: #e6e8ec;
+  --ink: #111111;
+  --muted: #50555f;
+  --accent: #4f46e5; /* taste-skill-ignore: the brand's indigo, fixed by the product spec (6.3) */
+  --accent-strong: #4338ca;
+  --accent-ink: #ffffff;
+  --accent-tint: #eef0fe;
+  --accent-tint-strong: #e0e3fc;
+  --accent-text: #4338ca;
+
+  /* inside the interface fragments ([data-ui]) */
+  --ui-border: #e3e5ea;
+  --ui-rule: #eceef2;
+  --ui-control: #d2d5dc;
+  --ui-panel: #f6f7f9;
+  --ui-active: #eceef1;
+  --ui-faint: #646a74;
+
+  --font-text: -apple-system, BlinkMacSystemFont, "Segoe UI Variable Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+  --font-display: -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+
+  /* five sizes do the visible work */
+  --step-small: clamp(0.8125rem, 0.79rem + 0.1vw, 0.875rem);
+  --step-body: clamp(1.0625rem, 1rem + 0.2vw, 1.125rem);
+  --step-lead: clamp(1.1875rem, 1.05rem + 0.5vw, 1.4375rem);
+  --step-head: clamp(2rem, 1.2rem + 2.2vw, 3rem);
+  --step-display: clamp(2.125rem, 0.4rem + 6.2vw, 3.75rem);
+
+  --margin: clamp(1.25rem, 2.2vw, 2rem);
+  --gutter: clamp(1rem, 1.8vw, 1.5rem);
+  --section: clamp(6rem, 12vw, 10rem);
+  --radius: 8px;
+
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.76, 0, 0.24, 1);
+  --ease-exit: cubic-bezier(0.55, 0.055, 0.675, 0.19);
+  --t-press: 140ms;
+  --t-hover: 180ms;
+  --t-ui: 240ms;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  background: var(--bg);
+}
+
+@media (pointer: fine) {
+  html {
+    overscroll-behavior: none;
+  }
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-text);
+  font-size: var(--step-body);
+  line-height: 1.5;
+  font-kerning: normal;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  -webkit-tap-highlight-color: transparent;
+  overflow-x: clip;
+}
+
+h1,
+h2,
+h3,
+h4,
+p,
+figure,
+blockquote,
+ul,
+ol,
+dl,
+dd {
+  margin: 0;
+}
+
+ul[class],
+ol[class] {
+  padding: 0;
+  list-style: none;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-display);
+  text-wrap: balance;
+  hyphens: none;
+}
+
+p {
+  text-wrap: pretty;
+}
+
+img,
+svg,
+video {
+  display: block;
+  max-width: 100%;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+a {
+  color: inherit;
+  touch-action: manipulation;
+}
+
+:target {
+  scroll-margin-top: 1.5rem;
+}
+
+::selection {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* The one primary action: a flat indigo button, used with the same words everywhere. */
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  min-height: 3.25rem;
+  padding: 0 1.4rem;
+  border-radius: var(--radius);
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-size: var(--step-body);
+  font-weight: 600;
+  line-height: 1.2;
+  text-decoration: none;
+  white-space: nowrap;
+  transition:
+    transform var(--t-press) var(--ease-out),
+    background-color var(--t-hover) ease;
+}
+
+.button:active {
+  transform: scale(0.97);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .button:hover {
+    background: var(--accent-strong);
+  }
+}
+
+.skip-link {
+  position: absolute;
+  top: 0.75rem;
+  left: var(--margin);
+  z-index: 10;
+  padding: 0.6rem 1rem;
+  border-radius: var(--radius);
+  background: var(--ink);
+  color: var(--bg);
+  font-size: var(--step-small);
+  text-decoration: none;
+  transform: translateY(-200%);
+}
+
+.skip-link:focus-visible {
+  transform: none;
+}
+
+/* Section entrances: hidden only when script is running, revealed once by RevealObserver. */
+@media (prefers-reduced-motion: no-preference) {
+  .js:not(.reveal-all) [data-reveal]:not([data-revealed]) {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+
+  .js [data-reveal] {
+    transition:
+      opacity 700ms var(--ease-out),
+      transform 900ms var(--ease-expo);
+    transition-delay: calc(var(--i, 0) * 80ms);
+  }
+}

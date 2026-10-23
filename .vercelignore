@@ -1,0 +1,15 @@
+# Only the app is uploaded. The CLI does not read .gitignore, so everything that is not needed to build the
+# site is listed here: agent and design-skill working folders, test output, and the product briefs.
+/.env*
+/.agents
+/.claude
+/.taste-skill
+/.playwright-cli
+/playwright-report
+/test-results
+/tsconfig.tsbuildinfo
+/product.md
+/opus_master_prompt.md
+/Second_Brain_Feature_Spec_Designed.md
+/Second-Brain-Product.html
+/skills-lock.json

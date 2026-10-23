@@ -1,0 +1,159 @@
+/* The close is the last two rows of a board of filled tiles, every cell used. */
+.footer {
+  padding: var(--section) var(--margin) var(--margin);
+}
+
+.board {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  grid-template-areas:
+    "statement statement statement statement nav nav nav event event scope scope scope"
+    "mark mark mark mark mark mark mark mark cta cta cta cta";
+  grid-template-rows: minmax(13.75rem, auto) minmax(20rem, auto);
+  gap: 8px;
+}
+
+.tile {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 1.5rem;
+  min-width: 0;
+  padding: 20px;
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.statement {
+  grid-area: statement;
+}
+
+.nav {
+  grid-area: nav;
+  justify-content: flex-start;
+}
+
+.event {
+  grid-area: event;
+}
+
+.scope {
+  grid-area: scope;
+}
+
+.mark {
+  grid-area: mark;
+  align-items: center;
+  justify-content: center;
+  overflow: clip;
+  background: var(--ink);
+  color: var(--bg);
+}
+
+.cta {
+  grid-area: cta;
+  background: var(--accent);
+  color: var(--accent-ink);
+  text-decoration: none;
+  transition:
+    background-color var(--t-hover) ease,
+    transform var(--t-press) var(--ease-out);
+}
+
+.cta:active {
+  transform: scale(0.99);
+}
+
+.statementText,
+.ctaText {
+  font-family: var(--font-display);
+  font-size: var(--step-lead);
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+}
+
+.small {
+  color: var(--muted);
+  font-size: var(--step-small);
+  line-height: 1.45;
+}
+
+.navList {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.navList a {
+  display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-decoration-thickness: 0.07em;
+  text-underline-offset: 0.25em;
+  transition: text-decoration-color var(--t-hover) ease;
+}
+
+.scopeText {
+  margin-top: auto;
+  font-size: var(--step-body);
+  line-height: 1.45;
+}
+
+.wordmark {
+  font-family: var(--font-display);
+  font-size: clamp(3.25rem, 9vw, 9.5rem);
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: -0.045em;
+  white-space: nowrap;
+}
+
+.arrow {
+  align-self: flex-end;
+  transition: transform var(--t-ui) var(--ease-out);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .navList a:hover {
+    text-decoration-color: currentColor;
+  }
+
+  .cta:hover {
+    background: var(--accent-strong);
+  }
+
+  .cta:hover .arrow {
+    transform: translateX(6px);
+  }
+}
+
+.cta:focus-visible {
+  outline-color: var(--ink);
+  outline-offset: 3px;
+}
+
+@media (max-width: 899px) {
+  .board {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-areas:
+      "mark mark"
+      "cta cta"
+      "nav scope"
+      "event statement";
+    grid-template-rows: 10rem minmax(10rem, auto) auto auto;
+    gap: 6px;
+  }
+
+  .wordmark {
+    font-size: clamp(2.5rem, 12.5vw, 6rem);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cta:active,
+  .cta:hover .arrow {
+    transform: none;
+  }
+}

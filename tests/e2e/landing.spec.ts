@@ -1,0 +1,218 @@
+import { expect, test, type Page } from "@playwright/test";
+
+const demo = (page: Page) => page.locator("#demo");
+
+/** Collects console errors, page errors and failed requests for the lifetime of the page. */
+function watchForProblems(page: Page) {
+  const problems: string[] = [];
+  page.on("console", (message) => {
+    if (message.type() === "error") problems.push(`console: ${message.text()}`);
+  });
+  page.on("pageerror", (error) => problems.push(`pageerror: ${error.message}`));
+  page.on("requestfailed", (request) => problems.push(`requestfailed: ${request.url()}`));
+  return problems;
+}
+
+async function startDemo(page: Page) {
+  await page.goto("/");
+  await demo(page).scrollIntoViewIfNeeded();
+}
+
+test.describe("landing page", () => {
+  test("states the pitch, offers one primary action and logs no errors", async ({ page }) => {
+    const problems = watchForProblems(page);
+    await page.goto("/");
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText(
+      /Stop collecting\.\s*Start remembering\.\s*Start doing\./,
+    );
+    await expect(page.getByText("Drop in what you learn. Second Brain connects the dots")).toBeVisible();
+    const cta = page.getByRole("link", { name: "Try Free with Google" }).first();
+    await expect(cta).toBeVisible();
+    await expect(cta).toHaveAttribute("href", "/sign-in");
+    await page.waitForTimeout(2500);
+    expect(problems).toEqual([]);
+  });
+
+  test("never scrolls sideways", async ({ page }) => {
+    await page.goto("/");
+    await page.waitForTimeout(500);
+    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+    expect(overflow).toBeLessThanOrEqual(0);
+  });
+
+  test("keeps the headline, the action and the demo above the fold on a desktop", async ({ page }, info) => {
+    test.skip(info.project.name === "mobile", "the phone stacks the demo below the copy by design");
+    await page.goto("/");
+    const fold = page.viewportSize()!.height;
+    for (const locator of [
+      page.getByRole("heading", { level: 1 }),
+      page.getByRole("link", { name: "Try Free with Google" }).first(),
+      page.locator("#demo [data-ui]"),
+    ]) {
+      const box = await locator.boundingBox();
+      expect(box, "element is rendered").not.toBeNull();
+      expect(box!.y).toBeLessThan(fold);
+      expect(box!.y + box!.height).toBeLessThanOrEqual(fold);
+    }
+  });
+
+  test("the primary action leads to the honest sign-in placeholder", async ({ page }) => {
+    await page.goto("/");
+    await page.getByRole("link", { name: "Try Free with Google" }).first().click();
+    await expect(page).toHaveURL(/\/sign-in$/, { timeout: 10_000 });
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Google sign-in isn’t connected yet");
+  });
+
+  test("keyboard focus reaches the primary action with a visible ring", async ({ page }, info) => {
+    test.skip(info.project.name === "mobile", "no hardware keyboard on the phone profile");
+    await page.goto("/");
+    for (let i = 0; i < 12; i++) {
+      await page.keyboard.press("Tab");
+      const name = await page.evaluate(() => document.activeElement?.textContent?.trim());
+      if (name === "Try Free with Google") break;
+    }
+    const focused = page.locator(":focus");
+    await expect(focused).toHaveText("Try Free with Google");
+    const outline = await focused.evaluate((el) => getComputedStyle(el).outlineStyle);
+    expect(outline).not.toBe("none");
+  });
+
+  test("the comparison lights the words a saved note produced", async ({ page }) => {
+    await page.goto("/");
+    const section = page.locator("#different");
+    await section.scrollIntoViewIfNeeded();
+    await section.getByRole("button", { name: /^Our October numbers/ }).click();
+    await expect(section.locator('p span[data-hit="true"]', { hasText: "1,240 paying learners" })).toBeVisible();
+  });
+});
+
+test.describe("demo", () => {
+  test.beforeEach(({}, info) => {
+    test.skip(info.project.name === "reduced-motion", "covered by the reduced-motion block");
+  });
+
+  test("plays capture to create on its own and rests on the result", async ({ page }) => {
+    test.setTimeout(60_000);
+    await startDemo(page);
+    await expect(demo(page)).toHaveAttribute("data-status", "playing", { timeout: 5_000 });
+    await expect(demo(page)).toHaveAttribute("data-stage", "connect", { timeout: 12_000 });
+    await expect(demo(page)).toHaveAttribute("data-stage", "recall", { timeout: 8_000 });
+    await expect(demo(page)).toHaveAttribute("data-status", "done", { timeout: 12_000 });
+    await expect(page.getByText("Prep brief: Rajesh, Accel")).toBeVisible();
+    await page.waitForTimeout(2_000);
+    await expect(demo(page), "it does not restart while someone reads").toHaveAttribute("data-status", "done");
+  });
+
+  test("pause holds the current stage and play continues it", async ({ page }) => {
+    await startDemo(page);
+    await expect(demo(page)).toHaveAttribute("data-status", "playing", { timeout: 5_000 });
+    await demo(page).getByRole("button", { name: "Pause", exact: true }).click();
+    await expect(demo(page)).toHaveAttribute("data-status", "paused");
+    const stage = await demo(page).getAttribute("data-stage");
+    await page.waitForTimeout(4_000);
+    await expect(demo(page)).toHaveAttribute("data-stage", stage!);
+    await demo(page).getByRole("button", { name: "Play", exact: true }).click();
+    await expect(demo(page)).toHaveAttribute("data-status", "playing");
+  });
+
+  test("replay starts the story again", async ({ page }) => {
+    await startDemo(page);
+    await demo(page).getByRole("button", { name: /Create, step 6 of 6/ }).click();
+    await expect(demo(page)).toHaveAttribute("data-stage", "create");
+    await demo(page).getByRole("button", { name: "Replay" }).click();
+    await expect(demo(page)).toHaveAttribute("data-stage", "capture");
+    await expect(demo(page)).toHaveAttribute("data-status", "playing");
+  });
+
+  test("each step button shows its stage", async ({ page }) => {
+    await startDemo(page);
+    const recall = demo(page).getByRole("button", { name: /Recall, step 5 of 6/ });
+    await recall.click();
+    await expect(demo(page)).toHaveAttribute("data-stage", "recall");
+    await expect(demo(page)).toHaveAttribute("data-status", "stepped");
+    await expect(recall).toHaveAttribute("aria-current", "step");
+    await expect(demo(page).locator('[data-recalled="true"]')).toHaveCount(4);
+  });
+
+  test("task chips change the task, the recalled memories and the answer", async ({ page }) => {
+    test.setTimeout(60_000);
+    await startDemo(page);
+    const chip = demo(page).getByRole("button", { name: "Draft an email" });
+    await chip.click();
+    await expect(chip).toHaveAttribute("aria-pressed", "true");
+    await expect(demo(page)).toHaveAttribute("data-stage", "ask");
+    await expect(demo(page).locator("[data-task-anchor]").getByText("Draft a note to Rajesh confirming tomorrow’s meeting.")).toBeVisible();
+    await expect(demo(page).locator('[data-recalled="true"]')).toHaveCount(3);
+    await expect(demo(page)).toHaveAttribute("data-status", "done", { timeout: 15_000 });
+    await expect(demo(page).locator(".sb-output-title")).toHaveText("Draft email to Rajesh");
+
+    await demo(page).getByRole("button", { name: "Plan a project" }).click();
+    await expect(demo(page).locator('[data-recalled="true"]')).toHaveCount(4);
+    await expect(demo(page).locator('[data-capture-id="review"]')).toHaveAttribute("data-recalled", "true");
+  });
+
+  test("choosing a source lights the sentences it produced", async ({ page }) => {
+    await startDemo(page);
+    await demo(page).getByRole("button", { name: /Create, step 6 of 6/ }).click();
+    await expect(demo(page).locator('.sb-answer[data-variant="brain"]').getByText("Opening line")).toBeVisible();
+    const card = demo(page).getByRole("button", { name: /^Rajesh \(Accel\) prefers numbers/ });
+    await card.click();
+    await expect(card).toHaveAttribute("aria-pressed", "true");
+    const lit = demo(page).locator('.sb-answer[data-variant="brain"] .sb-part[data-hit="true"]');
+    await expect(lit).toHaveCount(1);
+    await expect(lit).toHaveText("Skip the buzzwords; he prefers numbers.");
+  });
+
+  test("the generic answer can be compared with the Brain's", async ({ page }) => {
+    await startDemo(page);
+    await demo(page).getByRole("button", { name: /Create, step 6 of 6/ }).click();
+    const generic = demo(page).getByRole("button", { name: "Generic AI" });
+    await expect(generic).toBeVisible();
+    await generic.click();
+    await expect(demo(page)).toHaveAttribute("data-answer", "generic");
+    await expect(demo(page).getByText("“Thanks for your time. Let me share our vision.”")).toBeVisible();
+    await expect(demo(page).getByText("General knowledge only. 0 memories used.")).toBeVisible();
+  });
+
+  test("“Watch the 20-second demo” replays the demo and moves focus to it", async ({ page }) => {
+    await page.goto("/");
+    await page.getByRole("link", { name: "Watch the 20-second demo" }).click();
+    await expect(demo(page)).toBeFocused();
+    await expect(demo(page)).toHaveAttribute("data-stage", "capture");
+    await expect(demo(page)).toHaveAttribute("data-status", "playing");
+  });
+});
+
+test.describe("reduced motion", () => {
+  test.beforeEach(({}, info) => {
+    test.skip(info.project.name !== "reduced-motion", "runs only with reduced motion requested");
+  });
+
+  test("shows the finished story at once and never autoplays", async ({ page }) => {
+    await page.goto("/");
+    await expect(demo(page)).toHaveAttribute("data-stage", "create");
+    await expect(demo(page)).toHaveAttribute("data-status", "done");
+    await expect(page.getByText("Prep brief: Rajesh, Accel")).toBeVisible();
+    await expect(demo(page).locator('[data-view="dump"]'), "the Dump tab is not the one on show").toHaveAttribute(
+      "aria-hidden",
+      "true",
+    );
+    await page.waitForTimeout(3_000);
+    await expect(demo(page)).toHaveAttribute("data-status", "done");
+  });
+
+  test("a task chip swaps straight to that task's result", async ({ page }) => {
+    await page.goto("/");
+    await demo(page).getByRole("button", { name: "Plan a project" }).click();
+    await expect(demo(page)).toHaveAttribute("data-stage", "create");
+    await expect(demo(page).getByText("Seed round plan")).toBeVisible();
+  });
+
+  test("play still walks through the stages, without movement", async ({ page }) => {
+    await page.goto("/");
+    await demo(page).getByRole("button", { name: "Play", exact: true }).click();
+    await expect(demo(page)).toHaveAttribute("data-stage", "capture");
+    await expect(demo(page)).toHaveAttribute("data-status", "playing");
+    await expect(demo(page)).toHaveAttribute("data-stage", "understand", { timeout: 5_000 });
+  });
+});

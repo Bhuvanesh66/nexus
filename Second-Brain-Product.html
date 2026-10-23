@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Second Brain – Product Overview</title>
+<style>
+  body { font-family: Arial, sans-serif; font-size: 11pt; line-height: 1.5; color: #000; background: #fff; max-width: 800px; margin: 32px auto; padding: 0 16px; }
+  h1 { font-size: 22pt; margin-bottom: 4px; }
+  h2 { font-size: 16pt; margin-top: 28px; }
+  h3 { font-size: 13pt; margin-top: 20px; }
+  table { border-collapse: collapse; width: 100%; margin: 8px 0 16px; }
+  th, td { border: 1px solid #999; padding: 6px 8px; text-align: left; vertical-align: top; }
+  th { background: #eee; }
+  .example { background: #f3f3f3; border-left: 4px solid #999; padding: 8px 12px; margin: 8px 0; }
+  .note { color: #555; font-style: italic; }
+</style>
+</head>
+<body>
+
+<h1>Second Brain</h1>
+<p><b>An AI study coach that works from your own material, in your language, inside the chat app you already use.</b></p>
+
+<h2>What it is</h2>
+<p>Second Brain is an AI study coach that runs inside the chat app you already use. You send it everything you're learning from: YouTube lectures, PDFs, articles and voice notes. Then you tell it your goal. It builds a plan from your own material, quizzes you every day, shows what you haven't covered yet, and answers questions in your language. It also works across your whole class.</p>
+<p><b>In one line:</b> <i>Tell it your goal. It turns everything you've saved into a plan, quizzes you, shows what you're missing, and works with your whole batch, in your language.</i></p>
+
+<h2>Who it's for</h2>
+<p><b>Primary user:</b> an Indian college student with a deadline coming up: end-semester exams, a placement round, a technical interview or GATE.</p>
+<p><b>What their situation looks like today:</b></p>
+<ul>
+  <li>Their material is scattered: 15 YouTube lectures, a professor's PDF, a senior's handwritten notes, forwards in the batch group, and voice notes to themselves.</li>
+  <li>They study on their phone, often late at night, in a mix of English and their home language.</li>
+  <li>They study with friends and share resources in class groups.</li>
+  <li>They don't want to organise anything. They want to be ready by the exam date.</li>
+</ul>
+
+<h2>Core concepts</h2>
+<table>
+  <tr><th>Concept</th><th>Meaning</th></tr>
+  <tr><td><b>Source</b></td><td>Anything you save: a video, PDF, article or voice note</td></tr>
+  <tr><td><b>Brain</b></td><td>Everything you've saved, plus everything your batch shares</td></tr>
+  <tr><td><b>Goal</b></td><td>Something with a deadline, like "DBMS end-sem, Nov 5" or "Amazon SDE interview, Dec 1"</td></tr>
+  <tr><td><b>Topic</b></td><td>One unit of a goal, like "Normalization" or "Transactions"</td></tr>
+  <tr><td><b>Coverage</b></td><td>How much of a topic your saved material covers</td></tr>
+  <tr><td><b>Mastery</b></td><td>How well <i>you</i> know a topic, based on your quiz results</td></tr>
+  <tr><td><b>Batch</b></td><td>Your class or study group, which shares one brain</td></tr>
+</table>
+
+<h2>Features</h2>
+
+<h3>1. Dump: save anything in one step</h3>
+<ul>
+  <li>Forward a YouTube link, PDF, article link or voice note to the bot. That's all you do.</li>
+  <li>No folders, tags or titles. The bot replies with a short confirmation:</li>
+</ul>
+<p class="example">✅ Saved: <i>"Normalization in DBMS – Gate Smashers"</i> (18 min). Covers 1NF, 2NF, 3NF, BCNF. Linked to your DBMS goal.</p>
+<ul>
+  <li><b>Voice notes in any Indian language</b> are transcribed and saved like any other source. "Sir said Unit 4 is important, focus on deadlocks" becomes a searchable note.</li>
+  <li><b>Bulk save:</b> send a whole YouTube playlist or several PDFs at once.</li>
+</ul>
+
+<h3>2. Connect: organisation happens on its own</h3>
+<ul>
+  <li>Every source is read, transcribed and split into small pieces, each tied to its exact place: a video timestamp or a PDF page.</li>
+  <li>Each piece is matched to the topics in your goals automatically.</li>
+  <li>Related material is shown only when it's useful, while you're studying a topic or asking a question. There's no cluttered graph to maintain.</li>
+</ul>
+
+<h3>3. Goal Mode: start from a deadline ⭐ (Differentiator 1)</h3>
+<p>You set a goal and Second Brain plans everything toward it.</p>
+<p class="example"><b>You:</b> I have my DBMS exam on Nov 5<br>
+<b>Second Brain:</b> 13 days to go. Which syllabus? [VTU DBMS] [AKTU DBMS] [Paste your own]</p>
+<p><b>What you get:</b></p>
+<ul>
+  <li><b>A day-by-day plan,</b> built only from your saved material:</li>
+</ul>
+<p class="example"><b>Day 4 · Normalization</b> (~40 min)<br>
+▶️ Gate Smashers video, 03:10–15:40<br>
+📄 Prof's PDF, pages 14–19<br>
+📝 5-question quiz</p>
+<ul>
+  <li><b>The plan adjusts as you go.</b> Missing a day, or doing badly on a quiz, moves things around automatically. Weak topics get more time; strong ones get less.</li>
+  <li><b>A daily nudge</b> at a time you choose: "Day 4 is ready. Normalization, 40 min. Start?"</li>
+  <li><b>A countdown view:</b> days left, topics done, topics at risk.</li>
+  <li><b>Several goals at once,</b> such as DBMS and OS exams in the same week, with time split between them.</li>
+</ul>
+
+<h3>4. Gap Detection: what you're missing ⭐ (Differentiator 2)</h3>
+<p>Second Brain compares your saved material with what the goal requires and shows the difference.</p>
+<p class="example"><b>📊 DBMS coverage: 3 of 5 units</b><br>
+✅ ER Model: 4 sources<br>
+✅ SQL: 3 sources<br>
+✅ Normalization: 2 sources<br>
+⚠️ Indexing: 1 weak source<br>
+❌ Transactions &amp; Concurrency: <b>nothing saved</b><br>
+→ Want 2 well-rated lectures for Transactions? [Yes] [I'll find my own]</p>
+<ul>
+  <li><b>What it can compare against:</b> a university syllabus, a pasted job description ("Here's the Amazon SDE JD, what am I missing?"), or a standard list like GATE CSE topics.</li>
+  <li><b>Two separate measures:</b>
+    <ul>
+      <li><b>Coverage gaps:</b> you haven't saved anything on the topic.</li>
+      <li><b>Mastery gaps:</b> you saved material but keep getting the quiz questions wrong.</li>
+    </ul>
+  </li>
+  <li><b>Gaps show up early,</b> on day 1 rather than the night before the exam.</li>
+</ul>
+
+<h3>5. Batch Brain: one brain for the class ⭐ (Differentiator 3)</h3>
+<p>Add Second Brain to your class group. Anything anyone shares there becomes part of a shared batch brain.</p>
+<ul>
+  <li><b>Shared material:</b> lecture links, the professor's PDFs, a topper's notes and a senior's question bank all go in automatically.</li>
+  <li><b>Personal progress:</b> your goals, plan, quizzes and mastery stay your own.</li>
+  <li><b>Credit for sources:</b></li>
+</ul>
+<p class="example">Normalization removes redundancy by… <i>(from <b>Riya's</b> notes, p.22 · <b>your</b> voice note, Oct 12)</i></p>
+<ul>
+  <li><b>Batch insights</b> (anonymous): "Most of the class is weak on Transactions. Riya's notes on it are rated the most helpful."</li>
+  <li><b>Joining:</b> someone adds the bot to the group, or you join with a class code such as CSE-B-2027.</li>
+  <li><b>Privacy control:</b> each source can be marked <i>private</i> or <i>share with batch</i>. Voice notes are private by default.</li>
+</ul>
+
+<h3>6. Ask: answers from your own material, in your language</h3>
+<ul>
+  <li>Ask by text or voice, in English, Hindi, Tamil, Hinglish or a mix:</li>
+</ul>
+<p class="example">🎙️ "Kal exam hai, 2NF aur 3NF ka difference simple mein samjha do"</p>
+<ul>
+  <li><b>Answers come from your saved material first,</b> in the same language you asked in.</li>
+  <li><b>Every answer links to its source:</b> the exact video moment or PDF page. Tap it to go straight there.</li>
+  <li><b>It's honest when it doesn't know:</b> "Nothing you've saved covers this. Here's a general explanation, and it's now marked as a gap."</li>
+  <li><b>Questions about your goal work too:</b> "What should I revise tonight?", "Which topics am I weakest in?", "Make me a one-page cheat sheet for Unit 3."</li>
+</ul>
+
+<h3>7. Quiz and mastery tracking</h3>
+<ul>
+  <li><b>Daily quizzes</b> of 5 questions, mixing multiple-choice, short answer and "explain it in one line."</li>
+  <li><b>Questions come only from your sources,</b> and each one links to where the answer is.</li>
+  <li><b>Every answer updates mastery</b> for that topic, and the plan adjusts.</li>
+  <li><b>Exam-eve mode:</b> a quick revision quiz on your weakest topics, plus a one-page summary of each.</li>
+</ul>
+
+<h3>8. Do: turn your knowledge into something to hand in</h3>
+<p>Beyond studying, you can ask for outputs built from what you've saved:</p>
+<ul>
+  <li>A revision cheat sheet or a one-page summary of a unit</li>
+  <li>Likely exam questions with model answers, from your material</li>
+  <li>Interview prep: "Make 10 questions an Amazon interviewer might ask from what I've studied"</li>
+  <li>Project help: "Help me improve image alignment in my project using what I saved about SIFT and RANSAC"</li>
+</ul>
+<p>Every output cites its sources, so you can check it.</p>
+
+<h3>9. Dashboard (web)</h3>
+<p>A simple page that works on phone or laptop:</p>
+<ul>
+  <li><b>Goals:</b> a countdown, the plan calendar and progress for each goal</li>
+  <li><b>Coverage map:</b> each topic marked green, amber or red</li>
+  <li><b>Mastery chart:</b> how quiz scores change over time</li>
+  <li><b>Library:</b> everything saved, searchable, grouped by goal</li>
+  <li><b>Batch view:</b> shared sources and class-wide weak spots</li>
+</ul>
+
+<h2>A user's journey</h2>
+<p><b>Day 0, setup (2 minutes)</b><br>
+Aditi's classmate adds Second Brain to the CSE-B group. Aditi taps start and chooses Hinglish. The bot has already picked up 23 sources the class shared over the past week.</p>
+<p><b>Day 0, first goal</b><br>
+She types "DBMS exam Nov 5" and picks the VTU syllabus. She gets a 13-day plan and a coverage report: Transactions has nothing saved. She taps <i>Yes</i> for suggested lectures.</p>
+<p><b>Days 1–12, daily rhythm</b></p>
+<ul>
+  <li><b>9 PM:</b> a nudge arrives. She does 40 minutes of planned material and a 5-question quiz.</li>
+  <li><b>During the day:</b> she forwards new videos and voice notes. They're saved and placed in her plan without any effort from her.</li>
+  <li><b>Late-night doubt:</b> she asks in Hinglish by voice and gets an answer linked to the exact minute of her professor's lecture.</li>
+  <li><b>Day 6:</b> she misses a day, and the plan quietly rebalances.</li>
+</ul>
+<p><b>Day 12, exam eve</b><br>
+Exam-eve mode gives her a quiz on her three weakest topics and a one-page cheat sheet for each unit.</p>
+<p><b>After the exam</b><br>
+She sets her next goal ("OS exam Nov 12") or a placement goal. Everything she's saved carries over and counts toward the new goal.</p>
+
+<h2>How the experience should feel</h2>
+<ul>
+  <li><b>Low effort.</b> If something asks the user to organise, it's a failed design.</li>
+  <li><b>Goal first.</b> Every screen answers "Am I on track?"</li>
+  <li><b>Grounded.</b> Every answer and question can be traced to the user's own source.</li>
+  <li><b>Your language.</b> The user picks the language. Mixing languages is normal, not an edge case.</li>
+  <li><b>Social, but private.</b> The class shares material, while each person's progress stays their own.</li>
+  <li><b>Calm.</b> One nudge a day, no streak guilt, and no feed to scroll.</li>
+</ul>
+
+<h2>What it isn't</h2>
+<ul>
+  <li>Not a note-taking app. You never write formatted notes in it.</li>
+  <li>Not a general chatbot. It answers from <i>your</i> material first and marks anything else as general knowledge.</li>
+  <li>Not a course platform. It doesn't sell content. It uses what you already have.</li>
+  <li>Not a knowledge graph to manage. Connections stay out of sight until they help.</li>
+</ul>
+
+<h2>Plans</h2>
+<table>
+  <tr><th>Plan</th><th>Price</th><th>Includes</th></tr>
+  <tr><td><b>Free</b></td><td>₹0</td><td>30 sources, 1 active goal, batch brain</td></tr>
+  <tr><td><b>Exam Pass</b></td><td>₹49 / 2 weeks</td><td>Unlimited sources, goal mode, gap detection, voice in all languages</td></tr>
+  <tr><td><b>Pro</b></td><td>₹299 / month</td><td>Multiple goals, Do outputs, batch insights</td></tr>
+</table>
+<p>Payment by UPI, and you can cancel in one tap.</p>
+
+</body>
+</html>

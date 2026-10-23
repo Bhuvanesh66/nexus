@@ -1,0 +1,1451 @@
+/*
+ * Second Brain demo: frame, interface fragment and stage timeline.
+ *
+ * How the timeline works
+ * - The root (.sb-demo) carries data-stage (current stage), data-reached (stages reached so far, space
+ *   separated) and data-status (idle | playing | paused | stepped | done).
+ * - A beat is any element with data-at="<stage>": hidden until that stage is reached. While its stage is
+ *   playing it animates in after --d ms (scaled by --tempo). data-out="<stage>" hides an element at --o ms.
+ * - Every beat keeps its box while hidden, so nothing shifts as the story plays.
+ * - Paused runs freeze with animation-play-state; reduced motion keeps the fades and drops the travel.
+ * Rules for the product's own interface live under [data-ui] (its borders and radii are the app's).
+ */
+
+/* ---------- frame (page level) ---------- */
+
+.sb-demo {
+  --tempo: 1;
+  position: relative;
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  container: sb-demo / inline-size;
+  scroll-margin-top: 16px;
+}
+
+.sb-demo:focus {
+  outline: none;
+}
+
+.sb-demo:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 8px;
+  border-radius: 14px;
+}
+
+.sb-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px 16px;
+}
+
+.sb-steps {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.sb-step {
+  display: grid;
+  gap: 7px;
+  width: 100%;
+  min-height: 44px;
+  padding: 8px 0 4px;
+  border-radius: 6px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 16px;
+  text-align: left;
+  transition: color var(--t-hover) ease;
+}
+
+.sb-step:focus-visible {
+  outline-offset: 2px;
+}
+
+.sb-track {
+  display: block;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--surface-strong);
+  overflow: hidden;
+}
+
+.sb-fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--ink);
+  transform: scaleX(0);
+  transform-origin: 0 50%;
+}
+
+.sb-step-label {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .sb-step:hover {
+    color: var(--ink);
+  }
+}
+
+/* steps reached are full and in ink; the current one fills over its duration while it plays */
+.sb-demo[data-reached~="capture"] .sb-fill[data-step="capture"],
+.sb-demo[data-reached~="understand"] .sb-fill[data-step="understand"],
+.sb-demo[data-reached~="connect"] .sb-fill[data-step="connect"],
+.sb-demo[data-reached~="ask"] .sb-fill[data-step="ask"],
+.sb-demo[data-reached~="recall"] .sb-fill[data-step="recall"],
+.sb-demo[data-reached~="create"] .sb-fill[data-step="create"] {
+  transform: none;
+}
+
+.sb-demo[data-reached~="capture"] .sb-step[data-step="capture"],
+.sb-demo[data-reached~="understand"] .sb-step[data-step="understand"],
+.sb-demo[data-reached~="connect"] .sb-step[data-step="connect"],
+.sb-demo[data-reached~="ask"] .sb-step[data-step="ask"],
+.sb-demo[data-reached~="recall"] .sb-step[data-step="recall"],
+.sb-demo[data-reached~="create"] .sb-step[data-step="create"] {
+  color: var(--ink);
+}
+
+.sb-demo:is([data-status="playing"], [data-status="paused"])[data-stage="capture"] .sb-fill[data-step="capture"],
+.sb-demo:is([data-status="playing"], [data-status="paused"])[data-stage="understand"] .sb-fill[data-step="understand"],
+.sb-demo:is([data-status="playing"], [data-status="paused"])[data-stage="connect"] .sb-fill[data-step="connect"],
+.sb-demo:is([data-status="playing"], [data-status="paused"])[data-stage="ask"] .sb-fill[data-step="ask"],
+.sb-demo:is([data-status="playing"], [data-status="paused"])[data-stage="recall"] .sb-fill[data-step="recall"],
+.sb-demo:is([data-status="playing"], [data-status="paused"])[data-stage="create"] .sb-fill[data-step="create"] {
+  animation: sb-fill calc(var(--dur) * var(--tempo) * 1ms) linear both;
+}
+
+/* the current step, written out, for narrow frames where the step labels do not fit */
+.sb-now {
+  display: none;
+  margin-top: -4px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.sb-now > span {
+  display: none;
+}
+
+.sb-demo[data-stage="capture"] .sb-now > [data-now="capture"],
+.sb-demo[data-stage="understand"] .sb-now > [data-now="understand"],
+.sb-demo[data-stage="connect"] .sb-now > [data-now="connect"],
+.sb-demo[data-stage="ask"] .sb-now > [data-now="ask"],
+.sb-demo[data-stage="recall"] .sb-now > [data-now="recall"],
+.sb-demo[data-stage="create"] .sb-now > [data-now="create"] {
+  display: inline;
+}
+
+.sb-now b {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.sb-transport {
+  display: flex;
+  flex: none;
+  gap: 6px;
+}
+
+.sb-tbtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 0 13px 0 11px;
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  transition:
+    background-color var(--t-hover) ease,
+    transform var(--t-press) var(--ease-out);
+}
+
+.sb-tbtn:active {
+  transform: scale(0.96);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .sb-tbtn:hover {
+    background: var(--surface-strong);
+  }
+}
+
+.sb-tbtn > [data-when] {
+  display: none;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Pause and Play swap in place: one width for both, so the step bar never shifts */
+.sb-tbtn[data-toggle] {
+  justify-content: center;
+  min-width: 5.25rem;
+}
+
+.sb-demo[data-status="playing"] .sb-tbtn > [data-when="playing"],
+.sb-demo:not([data-status="playing"]) .sb-tbtn > [data-when="stopped"] {
+  display: inline-flex;
+}
+
+.sb-tasks {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.sb-tasks-label {
+  margin-right: 4px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.sb-task-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.sb-task {
+  min-height: 36px;
+  padding: 0 14px;
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+  transition:
+    background-color var(--t-hover) ease,
+    color var(--t-hover) ease,
+    transform var(--t-press) var(--ease-out);
+}
+
+.sb-task:active {
+  transform: scale(0.96);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .sb-task:hover {
+    background: var(--surface-strong);
+  }
+}
+
+.sb-task[aria-pressed="true"] {
+  background: var(--ink);
+  color: var(--bg);
+}
+
+.sb-note {
+  margin-left: auto;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+@media (pointer: coarse) {
+  .sb-tbtn,
+  .sb-task {
+    min-height: 44px;
+  }
+}
+
+/* ---------- the product fragment ---------- */
+
+[data-ui].sb-app {
+  position: relative;
+  min-width: 0;
+  overflow: clip;
+  border: 1px solid var(--ui-border);
+  border-radius: 12px;
+  background: var(--bg);
+  color: var(--ink);
+  font-size: 13px;
+  line-height: 19px;
+}
+
+[data-ui] .sb-appbar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  height: 44px;
+  padding: 0 14px;
+  border-bottom: 1px solid var(--ui-rule);
+}
+
+[data-ui] .sb-appname {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+[data-ui] .sb-appname svg {
+  color: var(--accent);
+}
+
+[data-ui] .sb-tabs {
+  display: flex;
+  gap: 2px;
+}
+
+[data-ui] .sb-tab {
+  padding: 3px 10px;
+  border-radius: 6px;
+  color: var(--ui-faint);
+  white-space: nowrap;
+  transition:
+    background-color 220ms ease,
+    color 220ms ease;
+}
+
+.sb-demo[data-tab="dump"] [data-ui] .sb-tab[data-tab-id="dump"],
+.sb-demo[data-tab="ask"] [data-ui] .sb-tab[data-tab-id="ask"] {
+  background: var(--ui-active);
+  color: var(--ink);
+}
+
+[data-ui] .sb-account {
+  margin-left: auto;
+  color: var(--ui-faint);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+[data-ui] .sb-body {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 0.84fr) minmax(0, 1.16fr);
+}
+
+/* My Brain: the captures, newest first. The left padding is the lane the connections are drawn in. */
+[data-ui] .sb-brain {
+  min-width: 0;
+  padding: 12px 12px 14px 30px;
+  border-right: 1px solid var(--ui-rule);
+  background: var(--ui-panel);
+}
+
+[data-ui] .sb-brain-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+[data-ui] .sb-brain-title {
+  font-weight: 600;
+}
+
+[data-ui] .sb-brain-count {
+  display: inline-grid;
+  color: var(--ui-faint);
+  font-size: 12px;
+  text-align: right;
+}
+
+[data-ui] .sb-brain-count > * {
+  grid-area: 1 / 1;
+}
+
+[data-ui] .sb-cards > li {
+  padding-bottom: 6px;
+}
+
+[data-ui] .sb-cards > li:last-child {
+  padding-bottom: 0;
+}
+
+/* the new capture's slot opens when it is saved, pushing the older captures down */
+[data-ui] .sb-cards > li.sb-slot {
+  display: grid;
+  grid-template-rows: 0fr;
+  padding-bottom: 0;
+}
+
+[data-ui] .sb-slot-inner {
+  min-height: 0;
+  overflow: hidden;
+}
+
+[data-ui] .sb-slot-inner > div {
+  padding-bottom: 6px;
+}
+
+.sb-demo[data-reached~="capture"] [data-ui] .sb-cards > li.sb-slot {
+  grid-template-rows: 1fr;
+}
+
+.sb-demo[data-reached~="capture"]:not([data-stage="capture"]) [data-ui] .sb-slot-inner {
+  overflow: visible;
+}
+
+[data-ui] .sb-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: 16px minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: 9px;
+  width: 100%;
+  min-height: 48px;
+  padding: 7px 10px;
+  border: 1px solid var(--ui-border);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--ink);
+  text-align: left;
+  transition:
+    border-color var(--t-hover) ease,
+    background-color var(--t-hover) ease,
+    opacity 320ms ease;
+}
+
+[data-ui] .sb-card > svg {
+  color: var(--ui-faint);
+}
+
+[data-ui] .sb-card::after {
+  content: "";
+  position: absolute;
+  inset: -4px;
+  border: 2px solid var(--accent);
+  border-radius: 11px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+[data-ui] .sb-card-text {
+  display: grid;
+  min-width: 0;
+}
+
+[data-ui] .sb-card-title {
+  overflow: hidden;
+  font-weight: 500;
+  line-height: 18px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+[data-ui] .sb-card-meta {
+  color: var(--ui-faint);
+  font-size: 12px;
+  line-height: 16px;
+}
+
+[data-ui] .sb-new {
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--ink);
+  color: var(--bg);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 16px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  [data-ui] .sb-card:hover {
+    border-color: var(--ui-control);
+  }
+}
+
+/* recalled captures light up in the accent; the rest step back */
+.sb-demo[data-reached~="recall"]:not([data-answer="generic"]) [data-ui] .sb-card[data-recalled="true"] {
+  border-color: var(--accent);
+  background: var(--accent-tint);
+}
+
+.sb-demo[data-reached~="recall"]:not([data-answer="generic"]) [data-ui] .sb-card[data-recalled="true"] > svg {
+  color: var(--accent);
+}
+
+.sb-demo[data-reached~="recall"]:not([data-answer="generic"]) [data-ui] .sb-card[data-recalled="false"] {
+  opacity: 0.5;
+}
+
+/* a source the visitor points at or selects */
+.sb-demo[data-demo] [data-ui] .sb-card[data-hit="true"] {
+  border-color: var(--ink);
+  opacity: 1;
+}
+
+[data-ui] .sb-card[aria-pressed="true"] {
+  border-color: var(--ink);
+}
+
+/* the workspace: two views (Dump and Ask) stacked in one cell so its height never changes */
+[data-ui] .sb-work {
+  display: grid;
+  min-width: 0;
+  padding: 14px;
+}
+
+[data-ui] .sb-view {
+  grid-area: 1 / 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+/* before the first run: what the empty workspace is about to show, and a way to start it */
+[data-ui] .sb-idle {
+  grid-area: 1 / 1;
+  align-self: center;
+  justify-self: center;
+  display: none;
+  justify-items: center;
+  gap: 12px;
+  max-width: 30ch;
+  padding-top: 44px;
+  color: var(--muted);
+  text-align: center;
+}
+
+.sb-demo[data-status="idle"] [data-ui] .sb-idle {
+  display: grid;
+}
+
+[data-ui] .sb-idle-play {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 0 16px 0 13px;
+  border-radius: 999px;
+  background: var(--ink);
+  color: var(--bg);
+  font-size: 13px;
+  font-weight: 600;
+  transition: transform var(--t-press) var(--ease-out);
+}
+
+[data-ui] .sb-idle-play:active {
+  transform: scale(0.96);
+}
+
+.sb-demo[data-tab="ask"] [data-ui] .sb-view[data-view="dump"],
+.sb-demo[data-tab="dump"] [data-ui] .sb-view[data-view="ask"] {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* stacked grid cells for text that changes in place */
+[data-ui] .sb-stack {
+  display: grid;
+  min-width: 0;
+}
+
+[data-ui] .sb-stack > * {
+  grid-area: 1 / 1;
+  min-width: 0;
+}
+
+/* processing steps: pending, then active, then done */
+[data-ui] .sb-process {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  font-size: 12px;
+  line-height: 16px;
+}
+
+[data-ui] .sb-pstep {
+  display: inline-grid;
+}
+
+[data-ui] .sb-pstep > * {
+  grid-area: 1 / 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+
+[data-ui] .sb-pending {
+  color: var(--ui-faint);
+}
+
+[data-ui] .sb-active {
+  color: var(--ink);
+  font-weight: 500;
+}
+
+[data-ui] .sb-done {
+  color: var(--muted);
+}
+
+[data-ui] .sb-done svg {
+  color: var(--ink);
+}
+
+[data-ui] .sb-composer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 5px 5px 5px 12px;
+  border: 1px solid var(--ui-control);
+  border-radius: 10px;
+  background: var(--bg);
+}
+
+[data-ui] .sb-composer .sb-stack {
+  flex: 1;
+}
+
+[data-ui] .sb-placeholder,
+[data-ui] .sb-linktext {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+[data-ui] .sb-placeholder {
+  color: var(--ui-faint);
+}
+
+[data-ui] .sb-linktext {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+[data-ui] .sb-linktext svg {
+  flex: none;
+  color: var(--ui-faint);
+}
+
+[data-ui] .sb-btn {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 13px;
+  border-radius: 6px;
+  background: var(--ink);
+  color: var(--bg);
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 20px;
+}
+
+[data-ui] .sb-capture,
+[data-ui] .sb-output {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 9px;
+  padding: 12px 14px;
+  border: 1px solid var(--ui-border);
+  border-radius: 10px;
+  background: var(--bg);
+}
+
+[data-ui] .sb-insight {
+  display: grid;
+  gap: 4px;
+}
+
+[data-ui] .sb-insight-title {
+  font-size: 14.5px;
+  font-weight: 600;
+  line-height: 20px;
+}
+
+[data-ui] .sb-insight-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ui-faint);
+  font-size: 12px;
+  line-height: 16px;
+}
+
+[data-ui] .sb-summary {
+  margin-top: 2px;
+  color: var(--muted);
+}
+
+[data-ui] .sb-takeaway {
+  margin-top: 4px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: var(--ui-panel);
+}
+
+[data-ui] .sb-takeaway b {
+  margin-right: 6px;
+  font-weight: 600;
+}
+
+[data-ui] .sb-keywords {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+[data-ui] .sb-keyword {
+  padding: 0 8px;
+  border: 1px solid var(--ui-border);
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 11.5px;
+  line-height: 18px;
+}
+
+[data-ui] .sb-connected {
+  display: grid;
+  gap: 5px;
+  padding-top: 9px;
+  border-top: 1px solid var(--ui-rule);
+}
+
+[data-ui] .sb-connected-lead {
+  font-size: 12.5px;
+  font-weight: 500;
+}
+
+[data-ui] .sb-relations {
+  display: grid;
+  gap: 5px;
+}
+
+[data-ui] .sb-relation {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  font-size: 12px;
+  line-height: 18px;
+}
+
+[data-ui] .sb-relation-pill {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 5px;
+  max-width: 70%;
+  padding: 0 8px 0 6px;
+  border-radius: 999px;
+  background: var(--accent-tint);
+  color: var(--accent-text);
+  font-weight: 500;
+}
+
+[data-ui] .sb-relation-pill span {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+[data-ui] .sb-relation-pill svg {
+  flex: none;
+}
+
+[data-ui] .sb-reason {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--ui-faint);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* Ask view */
+[data-ui] .sb-taskbox {
+  display: grid;
+  gap: 8px;
+  padding: 10px 10px 10px 12px;
+  border: 1px solid var(--ui-control);
+  border-radius: 10px;
+  background: var(--bg);
+}
+
+[data-ui] .sb-taskbox .sb-stack {
+  min-height: 38px;
+}
+
+[data-ui] .sb-tasktext {
+  font-size: 13.5px;
+}
+
+[data-ui] .sb-taskfoot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+[data-ui] .sb-mode {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 9px;
+  border: 1px solid var(--ui-border);
+  border-radius: 6px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 20px;
+  white-space: nowrap;
+}
+
+[data-ui] .sb-mode b {
+  color: var(--ink);
+  font-weight: 500;
+}
+
+[data-ui] .sb-taskfoot .sb-btn {
+  margin-left: auto;
+}
+
+[data-ui] .sb-status {
+  display: grid;
+  gap: 7px;
+  min-height: 20px;
+  font-size: 12px;
+  line-height: 16px;
+}
+
+[data-ui] .sb-status-steps,
+[data-ui] .sb-status-sources {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 14px;
+}
+
+[data-ui] .sb-status-sources {
+  gap: 6px;
+}
+
+/* the two kinds of knowledge, side by side: what you saved (accent) and what AI knows (grey) */
+[data-ui] .sb-memories,
+[data-ui] .sb-general {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 1px 9px 1px 7px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  line-height: 18px;
+  white-space: nowrap;
+}
+
+[data-ui] .sb-memories {
+  background: var(--accent-tint);
+  color: var(--accent-text);
+  font-weight: 600;
+}
+
+[data-ui] .sb-general {
+  border-color: var(--ui-border);
+  background: var(--ui-panel);
+  color: var(--muted);
+}
+
+[data-ui] .sb-general b {
+  color: var(--ink);
+  font-weight: 500;
+}
+
+[data-ui] .sb-roll {
+  display: inline-block;
+  height: 18px;
+  overflow: hidden;
+  vertical-align: bottom;
+}
+
+[data-ui] .sb-roll-strip {
+  display: grid;
+  transform: translateY(calc(var(--n) * -18px));
+  font-variant-numeric: tabular-nums;
+}
+
+[data-ui] .sb-roll-strip > span {
+  height: 18px;
+  line-height: 18px;
+}
+
+[data-ui] .sb-generic-note {
+  color: var(--muted);
+}
+
+[data-ui] .sb-output {
+  gap: 8px;
+}
+
+[data-ui] .sb-output-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px 10px;
+}
+
+[data-ui] .sb-output-title {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 20px;
+}
+
+[data-ui] .sb-compare {
+  display: inline-flex;
+  padding: 2px;
+  border: 1px solid var(--ui-border);
+  border-radius: 8px;
+  background: var(--ui-panel);
+}
+
+[data-ui] .sb-compare button {
+  min-height: 24px;
+  padding: 0 9px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: var(--muted);
+  font-size: 12px;
+  white-space: nowrap;
+  transition:
+    background-color var(--t-hover) ease,
+    color var(--t-hover) ease;
+}
+
+[data-ui] .sb-compare button[aria-pressed="true"] {
+  border-color: var(--ui-border);
+  background: var(--bg);
+  color: var(--ink);
+  font-weight: 500;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  [data-ui] .sb-compare button[aria-pressed="false"]:hover {
+    color: var(--ink);
+  }
+}
+
+[data-ui] .sb-answer {
+  display: grid;
+  gap: 7px;
+}
+
+[data-ui] .sb-answer[data-variant="generic"],
+.sb-demo[data-answer="generic"] [data-ui] .sb-answer[data-variant="brain"],
+.sb-demo[data-answer="generic"] [data-ui] .sb-status[data-variant="brain"],
+[data-ui] .sb-status[data-variant="generic"] {
+  display: none;
+}
+
+.sb-demo[data-answer="generic"] [data-ui] .sb-answer[data-variant="generic"] {
+  display: grid;
+}
+
+.sb-demo[data-answer="generic"] [data-ui] .sb-status[data-variant="generic"] {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+[data-ui] .sb-row-label {
+  margin-right: 6px;
+  font-weight: 600;
+}
+
+[data-ui] .sb-part {
+  border-radius: 3px;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+  transition:
+    background-color var(--t-hover) ease,
+    opacity var(--t-hover) ease;
+}
+
+[data-ui] .sb-part[data-hit="true"] {
+  background: var(--accent-tint);
+}
+
+[data-ui] .sb-part[data-dim="true"] {
+  opacity: 0.5;
+}
+
+[data-ui] .sb-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 20px;
+  margin: 0 2px 0 5px;
+  padding: 0 7px 0 6px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
+  transition:
+    background-color var(--t-hover) ease,
+    color var(--t-hover) ease;
+}
+
+[data-ui] .sb-chip[data-kind="brain"] {
+  background: var(--accent-tint);
+  color: var(--accent-text);
+}
+
+[data-ui] .sb-chip[data-kind="general"] {
+  border-color: var(--ui-border);
+  background: var(--ui-panel);
+  color: var(--muted);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  [data-ui] button.sb-chip:hover {
+    background: var(--accent-tint-strong);
+  }
+}
+
+[data-ui] button.sb-chip[data-hit="true"] {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+/* connections and recall paths, drawn over the body; they never take clicks */
+[data-ui] .sb-wires {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1;
+  overflow: visible;
+  pointer-events: none;
+}
+
+[data-ui] .sb-wires path {
+  fill: none;
+  stroke-linecap: round;
+}
+
+[data-ui] .sb-arc,
+[data-ui] .sb-recall {
+  stroke: var(--accent);
+  stroke-width: 1.5;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 0;
+  transition:
+    opacity var(--t-ui) ease,
+    stroke-width var(--t-ui) ease;
+}
+
+[data-ui] .sb-arc {
+  opacity: 0.8;
+}
+
+[data-ui] .sb-dot {
+  fill: var(--accent);
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+[data-ui] .sb-pulse {
+  stroke: var(--accent);
+  stroke-width: 4;
+  stroke-dasharray: 0.06 1.06;
+  stroke-dashoffset: 0.06;
+  visibility: hidden;
+}
+
+.sb-demo[data-reached~="ask"] [data-ui] :is(.sb-arc, .sb-dot) {
+  opacity: 0.25;
+}
+
+.sb-demo[data-answer="generic"] [data-ui] .sb-recall-group {
+  opacity: 0;
+}
+
+[data-ui] .sb-recall-group {
+  transition: opacity var(--t-ui) ease;
+}
+
+.sb-demo[data-demo] [data-ui] .sb-wires [data-hit="true"] {
+  opacity: 1;
+  stroke-width: 2.25;
+}
+
+.sb-demo[data-demo] [data-ui] .sb-wires [data-dim="true"] {
+  opacity: 0.15;
+}
+
+/* ---------- the timeline ---------- */
+
+.sb-demo [data-at] {
+  visibility: hidden;
+  opacity: 0;
+}
+
+.sb-demo[data-reached~="capture"] [data-at="capture"],
+.sb-demo[data-reached~="understand"] [data-at="understand"],
+.sb-demo[data-reached~="connect"] [data-at="connect"],
+.sb-demo[data-reached~="ask"] [data-at="ask"],
+.sb-demo[data-reached~="recall"] [data-at="recall"],
+.sb-demo[data-reached~="create"] [data-at="create"] {
+  visibility: visible;
+  opacity: 1;
+}
+
+.sb-demo[data-reached~="capture"] [data-out="capture"],
+.sb-demo[data-reached~="understand"] [data-out="understand"],
+.sb-demo[data-reached~="connect"] [data-out="connect"],
+.sb-demo[data-reached~="ask"] [data-out="ask"],
+.sb-demo[data-reached~="recall"] [data-out="recall"],
+.sb-demo[data-reached~="create"] [data-out="create"] {
+  visibility: hidden;
+  opacity: 0;
+}
+
+/* runs (playing, paused or a chosen step) animate the current stage's beats; a finished demo is static */
+@media (prefers-reduced-motion: no-preference) {
+  .sb-demo:is([data-status="playing"], [data-status="paused"], [data-status="stepped"])[data-stage="capture"] [data-at="capture"],
+  .sb-demo:is([data-status="playing"], [data-status="paused"], [data-status="stepped"])[data-stage="understand"] [data-at="understand"],
+  .sb-demo:is([data-status="playing"], [data-status="paused"], [data-status="stepped"])[data-stage="connect"] [data-at="connect"],
+  .sb-demo:is([data-status="playing"], [data-status="paused"], [data-status="stepped"])[data-stage="ask"] [data-at="ask"],
+  .sb-demo:is([data-status="playing"], [data-status="paused"], [data-status="stepped"])[data-stage="recall"] [data-at="recall"],
+  .sb-demo:is([data-status="playing"], [data-status="paused"], [data-status="stepped"])[data-stage="create"] [data-at="create"] {
+    animation: var(--a, sb-rise) var(--t, 460ms) var(--e, var(--ease-out)) both;
+    animation-delay: calc(var(--d, 0) * var(--tempo) * 1ms);
+  }
+
+  .sb-demo:is([data-status="playing"], [data-status="paused"], [data-status="stepped"])[data-stage="capture"] [data-out="capture"],
+  .sb-demo:is([data-status="playing"], [data-status="paused"], [data-status="stepped"])[data-stage="understand"] [data-out="understand"],
+  .sb-demo:is([data-status="playing"], [data-status="paused"], [data-status="stepped"])[data-stage="connect"] [data-out="connect"],
+  .sb-demo:is([data-status="playing"], [data-status="paused"], [data-status="stepped"])[data-stage="ask"] [data-out="ask"],
+  .sb-demo:is([data-status="playing"], [data-status="paused"], [data-status="stepped"])[data-stage="recall"] [data-out="recall"],
+  .sb-demo:is([data-status="playing"], [data-status="paused"], [data-status="stepped"])[data-stage="create"] [data-out="create"] {
+    animation: sb-out 180ms var(--ease-exit) both;
+    animation-delay: calc(var(--o, 0) * var(--tempo) * 1ms);
+  }
+
+  /* Send and Ask are pressed */
+  .sb-demo:is([data-status="playing"], [data-status="paused"], [data-status="stepped"])[data-stage="capture"] [data-press="capture"],
+  .sb-demo:is([data-status="playing"], [data-status="paused"], [data-status="stepped"])[data-stage="ask"] [data-press="ask"] {
+    animation: sb-press 320ms var(--ease-out) both;
+    animation-delay: calc(var(--p, 0) * var(--tempo) * 1ms);
+  }
+
+  /* the new capture's slot opens */
+  .sb-demo:is([data-status="playing"], [data-status="paused"], [data-status="stepped"])[data-stage="capture"] [data-ui] .sb-cards > li.sb-slot {
+    animation: sb-slot 420ms var(--ease-in-out) both;
+    animation-delay: calc(var(--slot, 0) * var(--tempo) * 1ms);
+  }
+
+  /* moving from Dump to Ask */
+  .sb-demo:is([data-status="playing"], [data-status="paused"], [data-status="stepped"])[data-stage="ask"] [data-ui] .sb-view[data-view="ask"] {
+    animation: sb-view-in 360ms var(--ease-out) 80ms both;
+  }
+
+  .sb-demo:is([data-status="playing"], [data-status="paused"], [data-status="stepped"])[data-stage="ask"] [data-ui] .sb-view[data-view="dump"] {
+    animation: sb-view-out 200ms var(--ease-exit) both;
+  }
+
+  /* recalled captures light up one by one, each ringing once, and a pulse travels to the task */
+  .sb-demo:is([data-status="playing"], [data-status="paused"], [data-status="stepped"])[data-stage="recall"]:not([data-answer="generic"]) [data-ui] .sb-card[data-recalled="true"] {
+    animation: sb-lit 360ms var(--ease-out) both;
+    animation-delay: calc(var(--lit, 0) * var(--tempo) * 1ms);
+  }
+
+  .sb-demo:is([data-status="playing"], [data-status="paused"], [data-status="stepped"])[data-stage="recall"]:not([data-answer="generic"]) [data-ui] .sb-card[data-recalled="true"]::after {
+    animation: sb-ring 760ms var(--ease-out) both;
+    animation-delay: calc(var(--lit, 0) * var(--tempo) * 1ms);
+  }
+
+  .sb-demo:is([data-status="playing"], [data-status="paused"], [data-status="stepped"])[data-stage="recall"]:not([data-answer="generic"]) [data-ui] .sb-pulse {
+    animation: sb-travel 950ms var(--ease-in-out) both;
+    animation-delay: calc(var(--d, 0) * var(--tempo) * 1ms);
+  }
+
+  .sb-demo:is([data-status="playing"], [data-status="paused"], [data-status="stepped"])[data-stage="recall"] [data-ui] .sb-roll-strip {
+    animation: sb-roll calc(var(--n) * 250ms * var(--tempo)) steps(var(--n), end) both;
+    animation-delay: calc(var(--d, 0) * var(--tempo) * 1ms);
+  }
+
+  [data-ui] button.sb-chip[data-hit="true"] {
+    animation: sb-pulse 520ms var(--ease-out);
+  }
+}
+
+/* reduced motion: the same states in the same order, by fading only */
+@media (prefers-reduced-motion: reduce) {
+  .sb-demo:is([data-status="playing"], [data-status="paused"], [data-status="stepped"])[data-stage="capture"] [data-at="capture"],
+  .sb-demo:is([data-status="playing"], [data-status="paused"], [data-status="stepped"])[data-stage="understand"] [data-at="understand"],
+  .sb-demo:is([data-status="playing"], [data-status="paused"], [data-status="stepped"])[data-stage="connect"] [data-at="connect"],
+  .sb-demo:is([data-status="playing"], [data-status="paused"], [data-status="stepped"])[data-stage="ask"] [data-at="ask"],
+  .sb-demo:is([data-status="playing"], [data-status="paused"], [data-status="stepped"])[data-stage="recall"] [data-at="recall"],
+  .sb-demo:is([data-status="playing"], [data-status="paused"], [data-status="stepped"])[data-stage="create"] [data-at="create"] {
+    animation: sb-fade 200ms ease both;
+    animation-delay: calc(var(--d, 0) * var(--tempo) * 1ms);
+  }
+
+  .sb-demo:is([data-status="playing"], [data-status="paused"], [data-status="stepped"])[data-stage="capture"] [data-out="capture"],
+  .sb-demo:is([data-status="playing"], [data-status="paused"], [data-status="stepped"])[data-stage="understand"] [data-out="understand"],
+  .sb-demo:is([data-status="playing"], [data-status="paused"], [data-status="stepped"])[data-stage="connect"] [data-out="connect"],
+  .sb-demo:is([data-status="playing"], [data-status="paused"], [data-status="stepped"])[data-stage="ask"] [data-out="ask"],
+  .sb-demo:is([data-status="playing"], [data-status="paused"], [data-status="stepped"])[data-stage="recall"] [data-out="recall"],
+  .sb-demo:is([data-status="playing"], [data-status="paused"], [data-status="stepped"])[data-stage="create"] [data-out="create"] {
+    animation: sb-out 1ms linear both;
+    animation-delay: calc(var(--o, 0) * var(--tempo) * 1ms);
+  }
+
+  .sb-demo:is([data-status="playing"], [data-status="paused"], [data-status="stepped"])[data-stage="capture"] [data-ui] .sb-cards > li.sb-slot {
+    animation: sb-slot 1ms linear both;
+    animation-delay: calc(var(--slot, 0) * var(--tempo) * 1ms);
+  }
+
+  .sb-demo:is([data-status="playing"], [data-status="paused"], [data-status="stepped"])[data-stage="recall"]:not([data-answer="generic"]) [data-ui] .sb-card[data-recalled="true"] {
+    animation: sb-lit 200ms ease both;
+    animation-delay: calc(var(--lit, 0) * var(--tempo) * 1ms);
+  }
+
+  /* at rest, states the story has moved past are removed rather than kept as invisible placeholders */
+  .sb-demo[data-status="done"][data-reached~="capture"] [data-out="capture"],
+  .sb-demo[data-status="done"][data-reached~="understand"] [data-out="understand"],
+  .sb-demo[data-status="done"][data-reached~="connect"] [data-out="connect"],
+  .sb-demo[data-status="done"][data-reached~="ask"] [data-out="ask"],
+  .sb-demo[data-status="done"][data-reached~="recall"] [data-out="recall"],
+  .sb-demo[data-status="done"][data-reached~="create"] [data-out="create"] {
+    display: none;
+  }
+
+  .sb-step,
+  .sb-tbtn,
+  .sb-task,
+  [data-ui] .sb-card,
+  [data-ui] .sb-chip {
+    transition-property: color, background-color, border-color, opacity;
+  }
+
+  .sb-tbtn:active,
+  .sb-task:active {
+    transform: none;
+  }
+}
+
+.sb-demo[data-status="paused"] *,
+.sb-demo[data-status="paused"] *::after {
+  animation-play-state: paused !important;
+}
+
+@keyframes sb-fill {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: none;
+  }
+}
+
+@keyframes sb-rise {
+  from {
+    visibility: hidden;
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    visibility: visible;
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes sb-fade {
+  from {
+    visibility: hidden;
+    opacity: 0;
+  }
+  to {
+    visibility: visible;
+    opacity: 1;
+  }
+}
+
+@keyframes sb-out {
+  from {
+    visibility: visible;
+    opacity: 1;
+  }
+  to {
+    visibility: hidden;
+    opacity: 0;
+  }
+}
+
+@keyframes sb-draw {
+  from {
+    visibility: visible;
+    opacity: 1;
+    stroke-dashoffset: 1;
+  }
+  to {
+    visibility: visible;
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes sb-dot {
+  from {
+    visibility: hidden;
+    opacity: 0;
+    transform: scale(0.3);
+  }
+  to {
+    visibility: visible;
+    transform: none;
+  }
+}
+
+@keyframes sb-press {
+  0%,
+  100% {
+    transform: none;
+  }
+  40% {
+    transform: scale(0.92);
+  }
+}
+
+@keyframes sb-slot {
+  from {
+    grid-template-rows: 0fr;
+  }
+  to {
+    grid-template-rows: 1fr;
+  }
+}
+
+@keyframes sb-view-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes sb-view-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes sb-lit {
+  from {
+    border-color: var(--ui-border);
+    background-color: var(--bg);
+  }
+}
+
+@keyframes sb-ring {
+  0% {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+  35% {
+    opacity: 0.85;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.03);
+  }
+}
+
+@keyframes sb-travel {
+  from {
+    visibility: visible;
+    stroke-dashoffset: 0.06;
+  }
+  to {
+    visibility: visible;
+    stroke-dashoffset: -1;
+  }
+}
+
+@keyframes sb-roll {
+  from {
+    transform: none;
+  }
+}
+
+@keyframes sb-pulse {
+  0%,
+  100% {
+    transform: none;
+  }
+  40% {
+    transform: scale(1.08);
+  }
+}
+
+/* ---------- narrow frames ---------- */
+
+@container sb-demo (max-width: 600px) {
+  [data-ui] .sb-body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  [data-ui] .sb-brain {
+    padding: 10px 26px 12px 28px;
+    border-right: 0;
+    border-bottom: 1px solid var(--ui-rule);
+  }
+
+  [data-ui] .sb-card {
+    min-height: 44px;
+    padding: 5px 9px;
+  }
+
+  [data-ui] .sb-work {
+    padding: 12px;
+  }
+
+  [data-ui] .sb-account {
+    display: none;
+  }
+
+  .sb-note {
+    flex-basis: 100%;
+    margin-left: 0;
+  }
+}
+
+@container sb-demo (max-width: 520px) {
+  .sb-step {
+    gap: 0;
+  }
+
+  .sb-step-label {
+    display: none;
+  }
+
+  .sb-now {
+    display: block;
+  }
+
+  [data-ui] .sb-appbar {
+    gap: 10px;
+    padding: 0 10px;
+  }
+
+  [data-ui] .sb-tab {
+    padding: 3px 8px;
+  }
+}
