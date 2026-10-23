@@ -144,6 +144,6 @@ As in `Nexus-Feature-List.md` §12 and the build brief §12; tracked with eviden
 ## 12. Known limitations (two-hour build)
 - Google sign-in needs a Google OAuth client entered in Supabase (manual, cannot be created from the CLI).
 - AI needs `ANTHROPIC_API_KEY` + `OPENAI_API_KEY`, or a card on the Vercel team for AI Gateway.
-- YouTube transcripts can be refused from datacenter IPs; the paste-a-summary recovery covers it.
+- YouTube refuses transcripts from Vercel's datacenter IPs (verified); the paste-a-summary recovery covers it.
 - Instagram reels and PDFs are not transcribed (roadmap); a reel URL is treated as a web page.
 - No streaming responses; a slow call shows "Still thinking…" with Cancel.

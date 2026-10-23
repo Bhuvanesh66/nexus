@@ -16,7 +16,7 @@
   Sources, Copy, Open in Gmail, history, empty-Vault line, Still thinking… + Cancel, Retry.
 - [x] **Phase 4** — Vault list newest first, live search, row menu, detail dialog (summary, source, keywords,
   names, connections that navigate), delete with confirmation (links cascade). `/stats` via `nexus_stats()`.
-- [x] **Phase 5** — lint, typecheck, build, Playwright suite, API and UI smoke tests (below), deployed.
+- [x] **Phase 5** — lint, typecheck, build, Playwright (49 passed, 17 skipped by design), API and UI smoke tests, deployed and re-checked in production (below).
 
 ## Evidence (local production build, real Supabase, two test users)
 
@@ -37,6 +37,26 @@
 | Ask without AI | 503 with a plain message and the fragments it would use |
 | Desktop 1440 and phone 390 screens | Drop, Hand off, Vault, dialog, menus checked; no page errors |
 
+## Evidence (production, https://second-brain-six-swart.vercel.app, commit 6c25c17)
+
+| Check | Result |
+|---|---|
+| `/` | 200, static, CTAs point at `/auth/sign-in` |
+| `/auth/sign-in` | 307 → `/sign-in?error=google-not-configured` (honest page) |
+| `/dashboard` signed out | 307 → `/sign-in` |
+| `/api/captures` signed out | 401 |
+| `/stats` | live totals from `nexus_stats()` |
+| Signed-in dashboard | renders |
+| Text, article (`paulgraham.com/ds.html`), post on X (`x.com/jack/status/20`) | 200, saved |
+| YouTube from Vercel | transcript refused → 422 "Paste a summary yourself?" → saved with the pasted summary and the real title |
+| Ask without AI | 503 with the fragment it would use |
+| User B reads user A's fragment | 404 |
+| Delete | 204 for each test fragment |
+
+Found and fixed in production: jsdom 30 could not load on Vercel's Node runtime (ERR_REQUIRE_ESM) and took the
+whole capture route down; replaced with linkedom, loaded lazily. Test users and their data were deleted
+afterwards, so `/stats` starts at zero. Email sign-up is switched off in Supabase; Google is the only way in.
+
 ## Blockers (need the owner)
 
 1. **Google sign-in**: the Google provider is not enabled in Supabase. Needs a Google OAuth client (steps in
@@ -45,6 +65,10 @@
    a card on file. Until then drops get a labelled basic summary and Hand off can't write. Claude summaries,
    Claude-confirmed connections, semantic retrieval and the five generated outputs are implemented but unverified
    against a live model.
+
+3. **YouTube transcripts on Vercel**: YouTube refuses caption requests from Vercel's datacenter IPs (they work
+   from a home connection). The paste-a-summary recovery covers it; a reliable fix is a transcript API or a
+   residential proxy, which needs an account and a key.
 
 ## Not built (spec §9 roadmap)
 Voice, WhatsApp, PDF, Instagram transcription, Chrome extension, OCR, multi-step execution, reminders.
