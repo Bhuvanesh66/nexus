@@ -56,16 +56,16 @@
   white-space: nowrap;
 }
 
-.stat[data-tone="pink"] .figure {
-  color: var(--pink);
+.stat[data-tone="teal"] .figure {
+  color: var(--teal-bright);
 }
 
-.stat[data-tone="amber"] .figure {
-  color: var(--amber);
+.stat[data-tone="sky"] .figure {
+  color: var(--sky);
 }
 
-.stat[data-tone="green"] .figure {
-  color: var(--green);
+.stat[data-tone="violet"] .figure {
+  color: var(--violet-bright);
 }
 
 .context {

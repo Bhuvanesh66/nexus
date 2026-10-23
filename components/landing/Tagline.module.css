@@ -13,16 +13,16 @@
   color: var(--ink);
 }
 
-.stripe[data-tone="pink"] {
-  background: var(--pink);
+.stripe[data-tone="teal"] {
+  background: var(--teal);
 }
 
-.stripe[data-tone="amber"] {
-  background: var(--amber);
+.stripe[data-tone="sky"] {
+  background: var(--sky);
 }
 
-.stripe[data-tone="violet"] {
-  background: var(--violet);
+.stripe[data-tone="indigo"] {
+  background: var(--indigo);
   color: var(--accent-ink);
 }
 

@@ -48,9 +48,9 @@
   display: block;
 }
 
-/* the word the page is about, in the first colour of the spectrum (3.1:1 on white, for type this large) */
+/* the word the page is about, in the first colour of the spectrum and the logo (3.7:1, for type this large) */
 .tone {
-  color: var(--pink);
+  color: var(--teal-strong);
 }
 
 .lead {
@@ -87,7 +87,7 @@
   width: 2.25rem;
   height: 2.25rem;
   border-radius: 999px;
-  background: var(--pink-tint);
+  background: var(--teal-tint);
   transition:
     background-color var(--t-hover) ease,
     transform var(--t-press) var(--ease-out);
@@ -103,7 +103,7 @@
   }
 
   .watch:hover .watchIcon {
-    background: var(--pink);
+    background: var(--teal);
   }
 }
 
@@ -143,11 +143,11 @@
 }
 
 .sourceIcons > :nth-child(1) {
-  color: var(--pink-deep);
+  color: var(--violet-deep);
 }
 
 .sourceIcons > :nth-child(2) {
-  color: var(--green-deep);
+  color: var(--blue-deep);
 }
 
 .sourceIcons > :nth-child(3) {
@@ -155,7 +155,7 @@
 }
 
 .sourceIcons > :nth-child(4) {
-  color: var(--amber-deep);
+  color: var(--teal-deep);
 }
 
 /* the working product stands on one flat field of lavender */

@@ -244,7 +244,7 @@ function AppFragment({ tab, task, focusId, selected, answer, onAnswer, onHover, 
           />
           {/* Shown only while the demo waits to start (data-status="idle"), in the space the story will fill. */}
           <div className="sb-idle">
-            <p>Watch a YouTube link become a prep brief in about 20 seconds.</p>
+            <p>Watch a reel become three sent applications in about 20 seconds.</p>
             <button type="button" className="sb-idle-play" onClick={onPlay}>
               <PlayIcon size={14} />
               See it live

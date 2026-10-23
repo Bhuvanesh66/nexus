@@ -131,6 +131,7 @@ test.describe("landing page", () => {
     await section.scrollIntoViewIfNeeded();
     await section.getByRole("button", { name: /^Our October numbers/ }).click();
     await expect(section.locator('p span[data-hit="true"]', { hasText: "1,240 paying learners" })).toBeVisible();
+    await expect(section.getByText("Sent to Northstar, Foundry 100 and Sprint Labs.")).toBeVisible();
   });
 });
 
@@ -145,8 +146,8 @@ test.describe("demo", () => {
     await expect(demo(page)).toHaveAttribute("data-status", "playing", { timeout: 5_000 });
     await expect(demo(page)).toHaveAttribute("data-stage", "connect", { timeout: 12_000 });
     await expect(demo(page)).toHaveAttribute("data-stage", "recall", { timeout: 8_000 });
-    await expect(demo(page)).toHaveAttribute("data-status", "done", { timeout: 12_000 });
-    await expect(page.getByText("Prep brief: Rajesh, Accel")).toBeVisible();
+    await expect(demo(page)).toHaveAttribute("data-status", "done", { timeout: 15_000 });
+    await expect(demo(page).getByText("Here. Done. 3 applications sent.")).toBeVisible();
     await page.waitForTimeout(2_000);
     await expect(demo(page), "it does not restart while someone reads").toHaveAttribute("data-status", "done");
   });
@@ -179,11 +180,29 @@ test.describe("demo", () => {
     await expect(demo(page)).toHaveAttribute("data-stage", "recall");
     await expect(demo(page)).toHaveAttribute("data-status", "stepped");
     await expect(surface).toHaveAttribute("aria-current", "step");
-    await expect(surface).toHaveAccessibleDescription("Nexus pulls every fragment that matters for that task.");
+    const description = "Nexus pulls every fragment that matters, then offers what it can do for you.";
+    await expect(surface).toHaveAccessibleDescription(description);
     const line = demo(page).locator('.sb-now > [data-now="recall"]');
     await expect(line).toBeVisible();
-    await expect(line).toHaveText("Surface · 5 of 6 · Nexus pulls every fragment that matters for that task.");
+    await expect(line).toHaveText(`Surface · 5 of 6 · ${description}`);
     await expect(demo(page).locator('[data-recalled="true"]')).toHaveCount(4);
+  });
+
+  test("surface offers the work and deliver checks in once before sending", async ({ page }) => {
+    test.setTimeout(45_000);
+    await startDemo(page);
+    await demo(page).getByRole("button", { name: /Surface, step 5 of 6/ }).click();
+    const chosen = demo(page).locator(".sb-option", { hasText: "Apply to all 3 accelerators from the reel" });
+    await expect(chosen.getByText("Doing this")).toBeVisible({ timeout: 5_000 });
+    await expect(demo(page).locator(".sb-option")).toHaveCount(3);
+
+    await demo(page).getByRole("button", { name: /Deliver, step 6 of 6/ }).click();
+    const output = demo(page).locator('.sb-deliver[data-variant="brain"]');
+    await expect(output.getByText("3 drafts ready. Need any refining?")).toBeVisible({ timeout: 5_000 });
+    await expect(output.getByText("Go ahead")).toBeVisible();
+    await expect(output.getByText("Sending applications…")).toBeVisible({ timeout: 5_000 });
+    await expect(output.getByText("Here. Done. 3 applications sent.")).toBeVisible({ timeout: 5_000 });
+    await expect(output.locator('.sb-tag[data-state="done"]')).toHaveText(["Sent", "Sent", "Sent"]);
   });
 
   test("task chips change the task, the surfaced fragments and the answer", async ({ page }) => {
@@ -193,37 +212,45 @@ test.describe("demo", () => {
     await chip.click();
     await expect(chip).toHaveAttribute("aria-pressed", "true");
     await expect(demo(page)).toHaveAttribute("data-stage", "ask");
-    await expect(demo(page).locator("[data-task-anchor]").getByText("Draft a note to Rajesh confirming tomorrow’s meeting.")).toBeVisible();
+    await expect(
+      demo(page).locator("[data-task-anchor]").getByText("Ask my mentor Priya for a warm intro to Northstar."),
+    ).toBeVisible();
     await expect(demo(page).locator('[data-recalled="true"]')).toHaveCount(3);
     await expect(demo(page)).toHaveAttribute("data-status", "done", { timeout: 15_000 });
-    await expect(demo(page).locator(".sb-output-title")).toHaveText("Draft email to Rajesh");
+    await expect(demo(page).locator(".sb-output-title")).toHaveText("Intro email");
+    await expect(demo(page).getByText("Here. Done. Email sent to Priya.")).toBeVisible();
 
-    await demo(page).getByRole("button", { name: "Plan a project" }).click();
+    await demo(page).getByRole("button", { name: "Prep for a meeting" }).click();
     await expect(demo(page).locator('[data-recalled="true"]')).toHaveCount(4);
-    await expect(demo(page).locator('[data-capture-id="review"]')).toHaveAttribute("data-recalled", "true");
+    await expect(demo(page).locator('[data-capture-id="partners"]')).toHaveAttribute("data-recalled", "true");
   });
 
   test("choosing a source lights the sentences it produced", async ({ page }) => {
     await startDemo(page);
     await demo(page).getByRole("button", { name: /Deliver, step 6 of 6/ }).click();
-    await expect(demo(page).locator('.sb-answer[data-variant="brain"]').getByText("Opening line")).toBeVisible();
-    const card = demo(page).getByRole("button", { name: /^Rajesh \(Accel\) prefers numbers/ });
+    const preview = demo(page).locator('.sb-deliver[data-variant="brain"] .sb-preview');
+    await expect(preview.getByText("Northstar asks: What do you do, and what traction do you have?")).toBeVisible({
+      timeout: 5_000,
+    });
+    const card = demo(page).getByRole("button", { name: /^Our October numbers/ });
     await card.click();
     await expect(card).toHaveAttribute("aria-pressed", "true");
-    const lit = demo(page).locator('.sb-answer[data-variant="brain"] .sb-part[data-hit="true"]');
+    const lit = preview.locator('.sb-part[data-hit="true"]');
     await expect(lit).toHaveCount(1);
-    await expect(lit).toHaveText("Skip the buzzwords; he prefers numbers.");
+    await expect(lit).toHaveText("1,240 paying learners, growing 18% a month.");
   });
 
   test("the generic answer can be compared with the Vault's", async ({ page }) => {
     await startDemo(page);
     await demo(page).getByRole("button", { name: /Deliver, step 6 of 6/ }).click();
     const generic = demo(page).getByRole("button", { name: "Generic AI" });
-    await expect(generic).toBeVisible();
+    await expect(generic).toBeVisible({ timeout: 10_000 });
     await generic.click();
     await expect(demo(page)).toHaveAttribute("data-answer", "generic");
-    await expect(demo(page).getByText("“Thanks for your time. Let me share our vision.”")).toBeVisible();
+    await expect(demo(page).getByText(/^We are an innovative edtech startup leveraging AI/)).toBeVisible();
     await expect(demo(page).getByText("General knowledge only. 0 fragments used.")).toBeVisible();
+    await expect(demo(page).getByText(/^Generic AI stops at the answer/)).toBeVisible();
+    await expect(demo(page).locator(".sb-items"), "generic AI makes and sends nothing").toBeHidden();
   });
 
   test("“See a fragment become work” replays the demo and moves focus to it", async ({ page }) => {
@@ -244,8 +271,8 @@ test.describe("reduced motion", () => {
     await page.goto("/");
     await expect(demo(page)).toHaveAttribute("data-stage", "create");
     await expect(demo(page)).toHaveAttribute("data-status", "done");
-    await expect(page.getByText("Prep brief: Rajesh, Accel")).toBeVisible();
-    await expect(demo(page).locator('[data-view="dump"]'), "the Dump tab is not the one on show").toHaveAttribute(
+    await expect(demo(page).getByText("Here. Done. 3 applications sent.")).toBeVisible();
+    await expect(demo(page).locator('[data-view="dump"]'), "the Drop tab is not the one on show").toHaveAttribute(
       "aria-hidden",
       "true",
     );
@@ -255,9 +282,10 @@ test.describe("reduced motion", () => {
 
   test("a task chip swaps straight to that task's result", async ({ page }) => {
     await page.goto("/");
-    await demo(page).getByRole("button", { name: "Plan a project" }).click();
+    await demo(page).getByRole("button", { name: "Prep for a meeting" }).click();
     await expect(demo(page)).toHaveAttribute("data-stage", "create");
-    await expect(demo(page).getByText("Seed round plan")).toBeVisible();
+    await expect(demo(page).locator(".sb-output-title")).toHaveText("Interview prep");
+    await expect(demo(page).getByText("Here. Done. Your Northstar prep is ready.")).toBeVisible();
   });
 
   test("play still walks through the stages, without movement", async ({ page }) => {

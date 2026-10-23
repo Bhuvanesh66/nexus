@@ -5,21 +5,21 @@ import styles from "./WhyNow.module.css";
 const STATS = [
   {
     figure: "919%",
-    tone: "pink",
+    tone: "teal",
     spoken: "919 percent",
     context: "Creator economy growth in India, 2020 to early 2026.",
     source: "Indeed, 2026",
   },
   {
     figure: "80M",
-    tone: "amber",
+    tone: "sky",
     spoken: "80 million",
     context: "Creators in India today.",
     source: "Kalaari Capital, Creator Economy Report",
   },
   {
     figure: "$1T+",
-    tone: "green",
+    tone: "violet",
     spoken: "More than 1 trillion dollars",
     context: "Creator-influenced consumer spending in India by 2030.",
     source: "BCG, From Content to Commerce, 2025",

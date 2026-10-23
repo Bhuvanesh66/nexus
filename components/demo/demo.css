@@ -82,25 +82,25 @@
   transform-origin: 0 50%;
 }
 
-/* one hue of the spectrum per step, so the bar fills pink to violet as the story plays */
+/* one hue of the spectrum per step, so the bar fills teal to violet as the story plays */
 .sb-fill[data-step="capture"] {
-  background: var(--pink);
+  background: var(--teal);
 }
 
 .sb-fill[data-step="understand"] {
-  background: var(--orange);
+  background: var(--cyan);
 }
 
 .sb-fill[data-step="connect"] {
-  background: var(--amber);
+  background: var(--sky);
 }
 
 .sb-fill[data-step="ask"] {
-  background: var(--green);
+  background: var(--blue);
 }
 
 .sb-fill[data-step="recall"] {
-  background: var(--sky);
+  background: var(--indigo);
 }
 
 .sb-fill[data-step="create"] {
@@ -176,27 +176,27 @@
 }
 
 .sb-now > [data-now="capture"] b {
-  color: var(--pink-deep);
+  color: var(--teal-deep);
 }
 
 .sb-now > [data-now="understand"] b {
-  color: var(--orange-deep);
+  color: var(--cyan-deep);
 }
 
 .sb-now > [data-now="connect"] b {
-  color: var(--amber-deep);
-}
-
-.sb-now > [data-now="ask"] b {
-  color: var(--green-deep);
-}
-
-.sb-now > [data-now="recall"] b {
   color: var(--sky-deep);
 }
 
-.sb-now > [data-now="create"] b {
+.sb-now > [data-now="ask"] b {
+  color: var(--blue-deep);
+}
+
+.sb-now > [data-now="recall"] b {
   color: var(--accent-text);
+}
+
+.sb-now > [data-now="create"] b {
+  color: var(--violet-deep);
 }
 
 .sb-now-count {
@@ -298,7 +298,7 @@
 }
 
 .sb-task[aria-pressed="true"] {
-  background: var(--violet);
+  background: var(--indigo);
   color: var(--accent-ink);
 }
 
@@ -468,12 +468,12 @@
 }
 
 /* each kind of fragment keeps its own colour */
-[data-ui] [data-kind="youtube"] > svg {
-  color: var(--pink-deep);
+[data-ui] [data-kind="reel"] > svg {
+  color: var(--violet-deep);
 }
 
 [data-ui] [data-kind="note"] > svg {
-  color: var(--amber-deep);
+  color: var(--teal-deep);
 }
 
 [data-ui] [data-kind="tweet"] > svg {
@@ -481,7 +481,7 @@
 }
 
 [data-ui] [data-kind="article"] > svg {
-  color: var(--green-deep);
+  color: var(--blue-deep);
 }
 
 [data-ui] .sb-card::after {
@@ -516,7 +516,7 @@
 [data-ui] .sb-new {
   padding: 1px 7px;
   border-radius: 999px;
-  background: var(--pink);
+  background: var(--teal);
   color: var(--ink);
   font-size: 11px;
   font-weight: 600;
@@ -593,7 +593,7 @@
   min-height: 36px;
   padding: 0 16px 0 13px;
   border-radius: 999px;
-  background: var(--violet);
+  background: var(--indigo);
   color: var(--accent-ink);
   font-size: 13px;
   font-weight: 600;
@@ -656,7 +656,7 @@
 }
 
 [data-ui] .sb-done svg {
-  color: var(--green-deep);
+  color: var(--teal-deep);
 }
 
 [data-ui] .sb-composer {
@@ -693,7 +693,7 @@
 
 [data-ui] .sb-linktext svg {
   flex: none;
-  color: var(--pink-deep);
+  color: var(--violet-deep);
 }
 
 [data-ui] .sb-btn {
@@ -741,7 +741,7 @@
 }
 
 [data-ui] .sb-insight-meta svg {
-  color: var(--pink-deep);
+  color: var(--violet-deep);
 }
 
 [data-ui] .sb-summary {
@@ -753,7 +753,7 @@
   margin-top: 4px;
   padding: 6px 10px;
   border-radius: 8px;
-  background: var(--amber-tint);
+  background: var(--teal-tint);
 }
 
 [data-ui] .sb-takeaway b {
@@ -1014,19 +1014,251 @@
   }
 }
 
-[data-ui] .sb-answer {
+/* Surface's offers and Deliver's work share one cell */
+[data-ui] .sb-stage {
   display: grid;
-  gap: 7px;
+  min-width: 0;
 }
 
-[data-ui] .sb-answer[data-variant="generic"],
-.sb-demo[data-answer="generic"] [data-ui] .sb-answer[data-variant="brain"],
+[data-ui] .sb-stage > * {
+  grid-area: 1 / 1;
+  min-width: 0;
+}
+
+[data-ui] .sb-options {
+  display: grid;
+  gap: 8px;
+  padding: 12px 14px;
+  border: 1px solid var(--ui-border);
+  border-radius: 10px;
+  background: var(--bg);
+}
+
+[data-ui] .sb-options-lead {
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+[data-ui] .sb-option-list {
+  display: grid;
+  gap: 6px;
+}
+
+[data-ui] .sb-option {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 36px;
+  padding: 6px 10px;
+  border: 1px solid var(--ui-border);
+  border-radius: 8px;
+}
+
+/* the offer Nexus takes: a ring in the accent behind it */
+[data-ui] .sb-option-ring {
+  position: absolute;
+  inset: -1px;
+  border: 1.5px solid var(--accent);
+  border-radius: 8px;
+  background: var(--accent-tint);
+}
+
+[data-ui] .sb-option-text {
+  position: relative;
+  display: inline-block;
+  min-width: 0;
+}
+
+[data-ui] .sb-option-pick {
+  position: relative;
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 4px;
+  color: var(--accent-text);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* the work: one row per piece, a preview to check, and the line that carries the run */
+[data-ui] .sb-deliver {
+  display: grid;
+  gap: 8px;
+}
+
+[data-ui] .sb-items {
+  display: grid;
+  border: 1px solid var(--ui-border);
+  border-radius: 8px;
+}
+
+[data-ui] .sb-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  column-gap: 10px;
+  min-height: 32px;
+  padding: 4px 6px 4px 10px;
+}
+
+[data-ui] .sb-item + .sb-item {
+  border-top: 1px solid var(--ui-rule);
+}
+
+[data-ui] .sb-item-name {
+  overflow: hidden;
+  font-weight: 600;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+[data-ui] .sb-item-detail {
+  color: var(--ui-faint);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+[data-ui] .sb-item-status {
+  display: inline-grid;
+  justify-items: end;
+  min-width: 88px;
+}
+
+[data-ui] .sb-item-status > * {
+  grid-area: 1 / 1;
+}
+
+[data-ui] .sb-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 8px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 600;
+  line-height: 20px;
+  white-space: nowrap;
+}
+
+[data-ui] .sb-tag[data-state="queued"] {
+  background: var(--ui-panel);
+  color: var(--ui-faint);
+}
+
+[data-ui] .sb-tag[data-state="working"] {
+  background: var(--blue-tint);
+  color: var(--blue-deep);
+}
+
+[data-ui] .sb-tag[data-state="made"] {
+  background: var(--violet-tint);
+  color: var(--violet-deep);
+}
+
+[data-ui] .sb-tag[data-state="done"] {
+  background: var(--teal-tint);
+  color: var(--teal-deep);
+}
+
+[data-ui] .sb-preview {
+  display: grid;
+  gap: 3px;
+  padding: 9px 12px;
+  border-radius: 8px;
+  background: var(--ui-panel);
+}
+
+[data-ui] .sb-preview-label {
+  color: var(--ui-faint);
+  font-size: 12px;
+  line-height: 16px;
+}
+
+[data-ui] .sb-preview-text {
+  line-height: 21px;
+}
+
+[data-ui] .sb-deliver-line {
+  display: grid;
+}
+
+[data-ui] .sb-deliver-line > * {
+  grid-area: 1 / 1;
+  min-width: 0;
+}
+
+[data-ui] .sb-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+  min-height: 32px;
+  font-size: 12.5px;
+  font-weight: 500;
+}
+
+/* working: a small dot that breathes while Nexus is busy */
+[data-ui] .sb-line[data-state="working"]::before {
+  content: "";
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--blue);
+}
+
+[data-ui] .sb-line[data-state="done"] {
+  color: var(--teal-deep);
+  font-weight: 600;
+}
+
+[data-ui] .sb-review {
+  justify-content: space-between;
+}
+
+[data-ui] .sb-review-actions {
+  display: inline-flex;
+  gap: 6px;
+}
+
+[data-ui] .sb-btn-quiet {
+  border: 1px solid var(--ui-control);
+  background: var(--bg);
+  color: var(--ink);
+}
+
+/* the green light */
+[data-ui] .sb-btn-go {
+  background: var(--teal);
+  color: var(--ink);
+}
+
+[data-ui] .sb-generic-foot {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 17px;
+}
+
+[data-ui] .sb-generic-foot svg {
+  flex: none;
+  margin-top: 2px;
+}
+
+/* compared with generic AI: the answer only, nothing made or sent */
+[data-ui] .sb-deliver[data-variant="generic"],
+.sb-demo[data-answer="generic"] [data-ui] .sb-deliver[data-variant="brain"],
 .sb-demo[data-answer="generic"] [data-ui] .sb-status[data-variant="brain"],
 [data-ui] .sb-status[data-variant="generic"] {
   display: none;
 }
 
-.sb-demo[data-answer="generic"] [data-ui] .sb-answer[data-variant="generic"] {
+.sb-demo[data-answer="generic"] [data-ui] .sb-deliver[data-variant="generic"] {
   display: grid;
 }
 
@@ -1034,11 +1266,6 @@
   display: flex;
   align-items: center;
   gap: 6px;
-}
-
-[data-ui] .sb-row-label {
-  margin-right: 6px;
-  font-weight: 600;
 }
 
 [data-ui] .sb-part {
@@ -1212,9 +1439,11 @@
     animation-delay: calc(var(--o, 0) * var(--tempo) * 1ms);
   }
 
-  /* Send and Hand off are pressed */
+  /* Send, Hand off, the chosen offer and Go ahead are pressed */
   .sb-demo:is([data-status="playing"], [data-status="paused"], [data-status="stepped"])[data-stage="capture"] [data-press="capture"],
-  .sb-demo:is([data-status="playing"], [data-status="paused"], [data-status="stepped"])[data-stage="ask"] [data-press="ask"] {
+  .sb-demo:is([data-status="playing"], [data-status="paused"], [data-status="stepped"])[data-stage="ask"] [data-press="ask"],
+  .sb-demo:is([data-status="playing"], [data-status="paused"], [data-status="stepped"])[data-stage="recall"] [data-press="recall"],
+  .sb-demo:is([data-status="playing"], [data-status="paused"], [data-status="stepped"])[data-stage="create"] [data-press="create"] {
     animation: sb-press 320ms var(--ease-out) both;
     animation-delay: calc(var(--p, 0) * var(--tempo) * 1ms);
   }
@@ -1257,6 +1486,10 @@
 
   [data-ui] button.sb-chip[data-hit="true"] {
     animation: sb-pulse 520ms var(--ease-out);
+  }
+
+  [data-ui] .sb-line[data-state="working"]::before {
+    animation: sb-breathe 1100ms ease-in-out infinite alternate;
   }
 
   /* the step line changes with a short fade */
@@ -1364,9 +1597,12 @@
   }
 }
 
+/* a beat that leaves inherits its visibility until then, so it stays hidden while the beat around it waits
+   to enter (an explicit "visible" would show it to the accessibility tree early); "visible" is the fallback */
 @keyframes sb-out {
   from {
     visibility: visible;
+    visibility: inherit;
     opacity: 1;
   }
   to {
@@ -1476,6 +1712,17 @@
   }
 }
 
+@keyframes sb-breathe {
+  from {
+    opacity: 1;
+    transform: none;
+  }
+  to {
+    opacity: 0.35;
+    transform: scale(0.7);
+  }
+}
+
 @keyframes sb-pulse {
   0%,
   100% {
@@ -1512,6 +1759,10 @@
     display: none;
   }
 
+  [data-ui] .sb-item-status {
+    min-width: 0;
+  }
+
   .sb-note {
     flex-basis: 100%;
     margin-left: 0;
@@ -1534,5 +1785,9 @@
 
   [data-ui] .sb-tab {
     padding: 3px 8px;
+  }
+
+  [data-ui] .sb-item-detail {
+    display: none;
   }
 }

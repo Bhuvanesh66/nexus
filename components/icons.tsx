@@ -24,17 +24,17 @@ function Icon({ size = 16, children, ...rest }: IconProps) {
 }
 
 /**
- * The Nexus mark: an N on an ink tile, drawn in three colours of the spectrum. The two uprights (pink, sky) are
- * what you know and what you are doing; the amber diagonal is where they meet. Same shape as app/icon.svg.
+ * The Nexus mark: an N on an ink tile, drawn in three colours of the page's spectrum. The two uprights (teal,
+ * violet) are what you know and what you are doing; the sky diagonal is where they meet. Same as app/icon.svg.
  */
 export function NexusMark({ size = 20, ...rest }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true" focusable="false" {...rest}>
       <rect width="24" height="24" rx="6" fill="#111111" />
       <g fill="none" strokeWidth="3" strokeLinecap="round">
-        <path d="M7.5 17V7" stroke="#ff4f8b" />
-        <path d="M16.5 17V7" stroke="#2e9bff" />
-        <path d="M7.5 7l9 10" stroke="#ffc21a" />
+        <path d="M7.5 17V7" stroke="#2dd4bf" />
+        <path d="M16.5 17V7" stroke="#a78bfa" /> {/* taste-skill-ignore: the logo's violet, from the brand's spectrum */}
+        <path d="M7.5 7l9 10" stroke="#38bdf8" />
       </g>
     </svg>
   );
@@ -58,6 +58,17 @@ export function YouTubeIcon(props: IconProps) {
     <Icon {...props}>
       <rect x="2.75" y="4.75" width="14.5" height="10.5" rx="3" />
       <path d="M8.5 7.9v4.2l3.6-2.1z" fill="currentColor" stroke="none" />
+    </Icon>
+  );
+}
+
+/** A short video: a frame with a clapper band across the top and a play mark. */
+export function ReelIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <rect x="2.75" y="2.75" width="14.5" height="14.5" rx="4" />
+      <path d="M2.75 7.25h14.5M7 2.75l2 4.5M11.5 2.75l2 4.5" />
+      <path d="M8.6 10.1v4.4l3.8-2.2z" fill="currentColor" stroke="none" />
     </Icon>
   );
 }

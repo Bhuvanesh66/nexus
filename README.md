@@ -55,30 +55,39 @@ links never prefetch, so a real OAuth start route will not be touched by a prefe
 
 How the demo behaves:
 
-- It plays once (about 19 seconds) when it scrolls into view, then rests on the result. It pauses itself when
+- The story: an Instagram reel about three accelerators is dropped in and absorbed, then connected to earlier
+  fragments. The task "I need to apply to startup accelerators" is handed off. Surface lights up the fragments
+  it needs and offers three things Nexus can do, and picks "Apply to all 3 accelerators from the reel".
+  Deliver creates the applications, asks "3 drafts ready. Need any refining?", takes the green light ("Go
+  ahead"), sends them and ends on "Here. Done. 3 applications sent."
+- It plays once (about 21 seconds) when it scrolls into view, then rests on the result. It pauses itself when
   scrolled away or when the tab is hidden, and never restarts on its own.
 - Pause, Play and Replay, plus a button for each stage, are above the product panel.
-- "Hand it a task" chips (prep for a meeting, draft an email, plan a project) replay hand off, surface and
-  deliver for that task; each task surfaces a different set of fragments.
+- "Hand it a task" chips (apply to accelerators, draft an email, prep for a meeting) replay hand off, surface
+  and deliver for that task; each surfaces a different set of fragments and does different work.
 - A line under the step bar names the current step and says what happens in it.
 - Pointing at or choosing a fragment lights the sentences it produced; the chips in the answer work the other way.
-- "With your Vault / Generic AI" compares the answer with and without the user's fragments.
+- "With your Vault / Generic AI" compares the work with what generic AI gives: an answer, and nothing done.
 - With reduced motion requested, the finished result is shown at once; Play still steps through the stages
   with fades only. Without script, the finished result is what renders.
 
 ## Sample content to confirm before launch
 
-All people, notes and numbers inside the demo are illustrative. They follow the briefs, but please confirm or
-replace them: Rajesh from Accel and the notes about him; "Our October numbers: 1,240 paying learners, +18% a
-month"; the podcast "Seed round prep: what investors check first" (42 min); the saved dates (Jul 18 to Oct 2);
-the three generic answers; the footer line "Built for Airtribe AI Builders Day ’26 — October 24, Bengaluru".
+All people, accelerators, notes and numbers inside the demo are illustrative. Please confirm or replace them:
+the accelerators Northstar Accelerator, Foundry 100 and Sprint Labs and their deadlines (Oct 31, Nov 4, Nov 8);
+the reel link; "Our October numbers: 1,240 paying learners, +18% a month"; the one-liner and team notes; the
+mentor Priya; the generic AI answers; the footer line "Built for Airtribe AI Builders Day ’26 — October 24,
+Bengaluru". The accelerator names are made up on purpose, so the demo never implies a partnership with a real
+programme.
 
 Claims that come from the positioning edits and should be checked before launch:
 
 - The three Why now figures and their sources (Indeed 2026: 919% creator economy growth in India, 2020 to
   early 2026; Kalaari Capital: 80M creators in India; BCG 2025: $1T+ creator-influenced spending by 2030).
 - "No credit card. Free during beta."
-- The composer placeholder and the Drop step invite reels, voice notes and screenshots; `product.md` lists
-  voice and Instagram as roadmap, not MVP. The hero's last line still names what works today.
+- The composer placeholder and the Drop step invite reels, voice notes and screenshots, and the demo now
+  drops an Instagram reel and sends applications on the visitor's behalf. `product.md` lists Instagram, voice
+  and autonomous execution as roadmap, not MVP. The demo is labelled as a demo; the hero's last line still
+  names what works today.
 
 The page claims no privacy policy, customers or integrations.

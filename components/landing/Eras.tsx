@@ -9,7 +9,7 @@ const ERAS = [
   {
     era: "Era 1",
     name: "The Mind",
-    tone: "pink",
+    tone: "teal",
     span: "200,000 years",
     scale: 1,
     text: "You remembered what you lived.",
@@ -18,7 +18,7 @@ const ERAS = [
   {
     era: "Era 2",
     name: "The Shelf",
-    tone: "sky",
+    tone: "blue",
     span: "5,000 years",
     scale: 5_000 / 200_000,
     text: "Books, files, Notion. You stored it, you fetched it.",
@@ -27,7 +27,7 @@ const ERAS = [
   {
     era: "Era 3",
     name: "Nexus",
-    tone: "violet",
+    tone: "indigo",
     span: "Begins now",
     scale: 0,
     text: "The right fragment doesn’t just arrive.",

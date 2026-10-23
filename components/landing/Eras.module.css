@@ -74,27 +74,27 @@
   background: var(--accent);
 }
 
-.era[data-tone="pink"] .bar {
-  background: var(--pink);
+.era[data-tone="teal"] .bar {
+  background: var(--teal);
 }
 
-.era[data-tone="sky"] .bar {
-  background: var(--sky);
+.era[data-tone="blue"] .bar {
+  background: var(--blue);
 }
 
 .span {
   font-weight: 700;
 }
 
-.era[data-tone="pink"] .span {
-  color: var(--pink-deep);
+.era[data-tone="teal"] .span {
+  color: var(--teal-deep);
 }
 
-.era[data-tone="sky"] .span {
-  color: var(--sky-deep);
+.era[data-tone="blue"] .span {
+  color: var(--blue-deep);
 }
 
-.era[data-tone="violet"] .span {
+.era[data-tone="indigo"] .span {
   color: var(--accent-text);
 }
 

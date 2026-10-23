@@ -49,7 +49,7 @@
 }
 
 .rowLabel[data-tone="yours"] {
-  color: var(--amber-deep);
+  color: var(--teal-deep);
 }
 
 .rowLabel[data-tone="nexus"] {
@@ -99,7 +99,9 @@
 /* inside the product rows: the app's own borders, radii and sizes */
 [data-ui].frag {
   display: grid;
+  align-content: start;
   gap: 12px;
+  min-height: 13rem;
   padding: 18px 20px;
   border: 1px solid var(--ui-border);
   border-radius: 12px;
@@ -114,28 +116,26 @@
   line-height: 20px;
 }
 
-[data-ui] .email {
-  display: grid;
-  gap: 8px;
+[data-ui] .answer {
   padding: 14px 16px;
   border-radius: 8px;
   background: var(--ui-panel);
-}
-
-[data-ui] .subject {
-  padding-bottom: 8px;
-  border-bottom: 1px solid var(--ui-border);
-  font-weight: 500;
-}
-
-[data-ui] .fieldLabel {
-  margin-right: 10px;
-  color: var(--ui-faint);
-  font-weight: 400;
-}
-
-[data-ui] .body {
   color: var(--ink);
+}
+
+/* what Nexus did with the answer, in the colour of a finished step */
+[data-ui] .sent {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--teal-deep);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 20px;
+}
+
+[data-ui] .sent svg {
+  flex: none;
 }
 
 [data-ui] .foot,
@@ -188,12 +188,12 @@
   color: var(--ui-faint);
 }
 
-[data-ui] .note[data-kind="youtube"] > svg {
-  color: var(--pink-deep);
+[data-ui] .note[data-kind="reel"] > svg {
+  color: var(--violet-deep);
 }
 
 [data-ui] .note[data-kind="note"] > svg {
-  color: var(--amber-deep);
+  color: var(--teal-deep);
 }
 
 [data-ui] .note[data-kind="tweet"] > svg {
@@ -201,7 +201,7 @@
 }
 
 [data-ui] .note[data-kind="article"] > svg {
-  color: var(--green-deep);
+  color: var(--blue-deep);
 }
 
 [data-ui] .noteText {

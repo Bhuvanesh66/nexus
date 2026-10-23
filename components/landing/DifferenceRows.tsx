@@ -7,22 +7,27 @@ import {
   KIND_LABEL,
   TASK_BY_ID,
   savedLabel,
-  type AnswerRow,
+  type AnswerPart,
   type CaptureId,
 } from "@/components/demo/demo-data";
-import { GlobeIcon, VaultMark } from "@/components/icons";
+import { CheckIcon, GlobeIcon, VaultMark } from "@/components/icons";
 import { cssVars } from "@/lib/css";
 import styles from "./Difference.module.css";
 
-/** The demo's "Draft an email" task, shown still and annotated: the same request answered with and without a Brain. */
-const TASK = TASK_BY_ID.email;
+/** The demo's application task, shown still: the same form question answered by generic AI and done by Nexus. */
+const TASK = TASK_BY_ID.apply;
+
+/** The fragments the Nexus answer draws on, in the order they appear in the Vault. */
+const USED: readonly CaptureId[] = ["metrics", "pitch", "team"];
+
+const SENT_TO = TASK.items.map((item) => item.name.replace(" Accelerator", ""));
 
 /**
- * Three states of one email: without your Vault, the fragments it draws on, and the email that uses them.
- * The fragments are live: pointing at one, or choosing it, lights the words it produced.
+ * Three states of one application answer: without your Vault, the fragments it draws on, and the answer that
+ * uses them and is sent. The fragments are live: pointing at one, or choosing it, lights the words it produced.
  */
 export function DifferenceRows() {
-  const [selected, setSelected] = useState<CaptureId>("numbers");
+  const [selected, setSelected] = useState<CaptureId>("metrics");
   const [hovered, setHovered] = useState<CaptureId | null>(null);
   const active = hovered ?? selected;
   const source = {
@@ -37,14 +42,16 @@ export function DifferenceRows() {
           Generic AI
         </h3>
         <div className={styles.frag} data-ui="">
-          <p className={styles.prompt}>{TASK.prompt}</p>
-          <Email rows={TASK.generic} active={null} {...source} />
+          <p className={styles.prompt}>{TASK.preview.label}</p>
+          <Answer parts={TASK.generic.parts} active={null} {...source} />
           <p className={styles.foot}>
             <GlobeIcon size={14} />
-            General knowledge only. 0 fragments used.
+            General knowledge only. 0 fragments used. Nothing sent.
           </p>
         </div>
-        <p className={styles.rowNote}>Fluent and polite. It doesn’t know Rajesh, so it reaches for the buzzwords he dislikes.</p>
+        <p className={styles.rowNote}>
+          Fluent, but it doesn’t know your numbers, so it reaches for the buzzwords partners skip. Then it stops.
+        </p>
       </div>
 
       <div className={styles.row} data-reveal="" style={cssVars({ "--i": 2 })}>
@@ -57,7 +64,7 @@ export function DifferenceRows() {
             In your Vault
           </p>
           <ul className={styles.notes} aria-labelledby="saved-title">
-            {TASK.recalled.map((id) => {
+            {USED.map((id) => {
               const capture = CAPTURE_BY_ID[id];
               return (
                 <li key={id}>
@@ -78,7 +85,7 @@ export function DifferenceRows() {
                     <span className={styles.noteText}>
                       <span className={styles.noteTitle}>{capture.title}</span>
                       <span className={styles.noteMeta}>
-                        {KIND_LABEL[capture.kind]} · saved {savedLabel(capture)}
+                        {KIND_LABEL[capture.kind]} · dropped {savedLabel(capture)}
                       </span>
                     </span>
                   </button>
@@ -87,11 +94,11 @@ export function DifferenceRows() {
             })}
           </ul>
           <p id="saved-hint" className="sr-only">
-            Highlights the words this fragment produced in the Nexus email.
+            Highlights the words this fragment produced in the Nexus answer.
           </p>
         </div>
         <p className={styles.rowNote}>
-          Dropped over six weeks, with no folders or tags. Point at one to see the words it produced.
+          Dropped over two months, with no folders or tags. Point at one to see the words it produced.
         </p>
       </div>
 
@@ -100,71 +107,72 @@ export function DifferenceRows() {
           Nexus
         </h3>
         <div className={styles.frag} data-ui="">
-          <p className={styles.prompt}>{TASK.prompt}</p>
-          <Email rows={TASK.rows} active={active} {...source} />
+          <p className={styles.prompt}>{TASK.preview.label}</p>
+          <Answer parts={TASK.preview.parts} active={active} {...source} />
+          <p className={styles.sent}>
+            <CheckIcon size={14} />
+            Sent to {SENT_TO.slice(0, -1).join(", ")} and {SENT_TO.at(-1)}.
+          </p>
           <p className={styles.foot}>
             <VaultMark size={14} />
-            {TASK.recalled.length} fragments used, plus general knowledge.
+            {USED.length} fragments used, plus general knowledge.
           </p>
         </div>
         <p className={styles.rowNote}>
-          The same request, written in numbers, because you once noted that Rajesh prefers them.
+          The same question, answered with your own numbers, then sent to all three. Done, not just answered.
         </p>
       </div>
     </>
   );
 }
 
-interface EmailProps {
-  rows: readonly AnswerRow[];
+interface AnswerProps {
+  parts: readonly AnswerPart[];
   active: CaptureId | null;
   onHover: (id: CaptureId | null) => void;
   onSelect: (id: CaptureId) => void;
 }
 
-/** An email laid out the way the app drafts it: a subject line, then the body, each sentence with its source. */
-function Email({ rows, active, onHover, onSelect }: EmailProps) {
+/** An answer the way the app writes it: each sentence followed by the fragment it came from. */
+function Answer({ parts, active, onHover, onSelect }: AnswerProps) {
   return (
-    <div className={styles.email}>
-      {rows.map((row) => (
-        <p key={row.label} className={row.label === "Subject" ? styles.subject : styles.body}>
-          {row.label === "Subject" ? <span className={styles.fieldLabel}>Subject</span> : null}
-          {row.parts.map((part) => {
-            const hit = active !== null && (part.from ?? []).includes(active);
-            return (
-              <span key={part.text}>
-                <span className={styles.part} data-hit={hit ? "true" : undefined}>
-                  {part.text}
-                </span>
-                {(part.from ?? []).map((id) => (
-                  <button
-                    key={id}
-                    type="button"
-                    className={styles.chip}
-                    data-kind="brain"
-                    data-hit={active === id ? "true" : undefined}
-                    aria-label={`From your Vault: ${CAPTURE_BY_ID[id].title}`}
-                    onPointerEnter={() => onHover(id)}
-                    onPointerLeave={() => onHover(null)}
-                    onFocus={() => onHover(id)}
-                    onBlur={() => onHover(null)}
-                    onClick={() => onSelect(id)}
-                  >
-                    <VaultMark size={11} />
-                    {CAPTURE_BY_ID[id].short}
-                  </button>
-                ))}
-                {part.general ? (
-                  <span className={styles.chip} data-kind="general">
-                    <GlobeIcon size={11} />
-                    General knowledge
-                  </span>
-                ) : null}{" "}
+    <div className={styles.answer}>
+      <p>
+        {parts.map((part) => {
+          const hit = active !== null && (part.from ?? []).includes(active);
+          return (
+            <span key={part.text}>
+              <span className={styles.part} data-hit={hit ? "true" : undefined}>
+                {part.text}
               </span>
-            );
-          })}
-        </p>
-      ))}
+              {(part.from ?? []).map((id) => (
+                <button
+                  key={id}
+                  type="button"
+                  className={styles.chip}
+                  data-kind="brain"
+                  data-hit={active === id ? "true" : undefined}
+                  aria-label={`From your Vault: ${CAPTURE_BY_ID[id].title}`}
+                  onPointerEnter={() => onHover(id)}
+                  onPointerLeave={() => onHover(null)}
+                  onFocus={() => onHover(id)}
+                  onBlur={() => onHover(null)}
+                  onClick={() => onSelect(id)}
+                >
+                  <VaultMark size={11} />
+                  {CAPTURE_BY_ID[id].short}
+                </button>
+              ))}
+              {part.general ? (
+                <span className={styles.chip} data-kind="general">
+                  <GlobeIcon size={11} />
+                  General knowledge
+                </span>
+              ) : null}{" "}
+            </span>
+          );
+        })}
+      </p>
     </div>
   );
 }

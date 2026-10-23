@@ -1,7 +1,7 @@
 /**
  * Deterministic content for the landing-page demo. Nothing here talks to a backend: it is sample data
- * that walks through one story (preparing for a seed meeting) the same way on every visit.
- * The people and notes are illustrative and only appear inside the demo UI.
+ * that walks through one story (a reel about accelerators becomes three sent applications) the same way on
+ * every visit. The people, accelerators and notes are illustrative and only appear inside the demo UI.
  */
 
 export const STAGE_IDS = ["capture", "understand", "connect", "ask", "recall", "create"] as const;
@@ -24,42 +24,42 @@ export const STAGES: readonly Stage[] = [
     id: "capture",
     label: "Drop",
     description: "Paste a reel, link, voice note, screenshot, or anything you just learned.",
-    duration: 2800,
+    duration: 2600,
     tab: "dump",
   },
   {
     id: "understand",
     label: "Absorb",
     description: "Nexus reads it, understands it, pulls out what matters.",
-    duration: 3400,
+    duration: 3000,
     tab: "dump",
   },
   {
     id: "connect",
     label: "Connect",
     description: "Every new fragment gets stitched to related ones you’ve dropped before.",
-    duration: 3000,
+    duration: 2800,
     tab: "dump",
   },
   {
     id: "ask",
     label: "Hand off",
-    description: "Name a task: “prep for this meeting”, “draft this email”, “plan this move”.",
-    duration: 2400,
+    description: "Name a task: “apply to these accelerators”, “draft this email”, “prep me for Friday”.",
+    duration: 2200,
     tab: "ask",
   },
   {
     id: "recall",
     label: "Surface",
-    description: "Nexus pulls every fragment that matters for that task.",
-    duration: 3000,
+    description: "Nexus pulls every fragment that matters, then offers what it can do for you.",
+    duration: 3600,
     tab: "ask",
   },
   {
     id: "create",
     label: "Deliver",
-    description: "Finished work. The email drafted. The brief written. The next move ready.",
-    duration: 4000,
+    description: "It does the work, checks with you once, then finishes it. Done, not just answered.",
+    duration: 7200,
     tab: "ask",
   },
 ];
@@ -81,18 +81,30 @@ export function reachedThrough(id: StageId): string {
  */
 export const BEATS = {
   capture: { link: 250, send: 1000, slot: 1250, card: 1400 },
-  understand: { title: 250, summary: [850, 1450], takeaway: 2050, keywords: 2550 },
+  understand: { title: 250, summary: [800, 1350], takeaway: 1900, keywords: 2350 },
   connect: { arc: 300, arcGap: 350, done: 1500, confirm: 1650, pill: 1850, pillGap: 150 },
   ask: { task: 350, mode: 650, press: 1500 },
-  recall: { first: 200, gap: 250, checked: 1300, general: 1400, combined: 2400 },
-  create: { firstRow: 350, rowGap: 600, compare: 3000 },
+  recall: { first: 200, gap: 250, checked: 1200, general: 1300, options: 1500, optionGap: 150, ready: 2100, pick: 2700 },
+  create: {
+    making: 200,
+    made: 1400,
+    preview: 1700,
+    review: 2300,
+    approve: 3800,
+    sending: 4100,
+    sent: 5200,
+    done: 5900,
+    compare: 6200,
+    itemGap: 150,
+    doneGap: 200,
+  },
 } as const;
 
-export type CaptureId = "podcast" | "metrics" | "numbers" | "edtech" | "review" | "thesis";
-export type CaptureKind = "youtube" | "article" | "note" | "tweet";
+export type CaptureId = "reel" | "metrics" | "pitch" | "team" | "partners" | "review";
+export type CaptureKind = "reel" | "article" | "note" | "tweet";
 
 export const KIND_LABEL: Record<CaptureKind, string> = {
-  youtube: "YouTube",
+  reel: "Instagram reel",
   article: "Article",
   note: "Typed note",
   tweet: "Tweet",
@@ -110,15 +122,15 @@ export interface Capture {
 
 /** The Vault, newest first. The first entry is the fragment the demo drops in. */
 export const CAPTURES: readonly Capture[] = [
-  { id: "podcast", kind: "youtube", title: "Seed round prep: what investors check first", short: "Seed prep podcast", savedOn: null },
+  { id: "reel", kind: "reel", title: "3 accelerators closing applications soon", short: "Accelerators reel", savedOn: null },
   { id: "metrics", kind: "note", title: "Our October numbers: 1,240 paying learners, +18% a month", short: "Your October numbers", savedOn: "2026-10-02" },
-  { id: "numbers", kind: "note", title: "Rajesh (Accel) prefers numbers over buzzwords", short: "Rajesh prefers numbers", savedOn: "2026-09-12" },
-  { id: "edtech", kind: "note", title: "Rajesh has invested in two edtech startups", short: "Rajesh’s edtech bets", savedOn: "2026-08-30" },
+  { id: "pitch", kind: "note", title: "Our one-liner: cohort courses that get learners job-ready in 12 weeks", short: "Your one-liner", savedOn: "2026-09-18" },
+  { id: "team", kind: "note", title: "Team: two founders, full-time since March, ex-product and ex-payments", short: "Your team note", savedOn: "2026-09-05" },
+  { id: "partners", kind: "article", title: "What accelerator partners read first: traction, team, why now", short: "What partners read first", savedOn: "2026-08-21" },
   { id: "review", kind: "tweet", title: "A 15-minute weekly review: three questions every Friday", short: "Weekly review tweet", savedOn: "2026-08-02" },
-  { id: "thesis", kind: "article", title: "Accel’s seed thesis: ambitious, high-growth companies", short: "Accel’s seed thesis", savedOn: "2026-07-18" },
 ];
 
-export const NEW_CAPTURE_ID: CaptureId = "podcast";
+export const NEW_CAPTURE_ID: CaptureId = "reel";
 
 export const CAPTURE_BY_ID = Object.fromEntries(CAPTURES.map((c) => [c.id, c])) as Record<CaptureId, Capture>;
 
@@ -129,28 +141,27 @@ export function savedLabel(capture: Capture): string {
   return capture.savedOn ? SAVED_FORMAT.format(new Date(`${capture.savedOn}T00:00:00Z`)) : "Today";
 }
 
-/** What the Absorb stage pulls out of the new YouTube fragment. */
+/** What the Absorb stage pulls out of the new reel. */
 export const NEW_CAPTURE_INSIGHT = {
-  link: "youtube.com/watch?v=seed-round-prep",
-  source: "YouTube · 42 min",
-  title: "Seed round prep: what investors check first",
+  link: "instagram.com/reel/C8kQ2xLp9wA",
+  source: "Instagram reel · 0:58",
+  title: "3 accelerators closing applications soon",
   summary: [
-    "A founder and an investor on first meetings. Investors decide early,",
-    "so lead with traction, show how you will spend the round and know your retention cold.",
+    "A founder walks through three accelerators taking applications:",
+    "Northstar (closes Oct 31), Foundry 100 (Nov 4) and Sprint Labs (Nov 8), and what each form asks.",
   ],
-  takeaway: "Open with your strongest number, not your vision.",
-  keywords: ["seed round", "traction", "first meetings"],
+  takeaway: "Lead with traction. Every form asks for it first.",
+  keywords: ["accelerators", "deadlines", "applications"],
 } as const;
 
 /** Links the Connect stage draws from the new fragment. Not every fragment is connected. */
 export const CONNECTIONS: readonly { to: CaptureId; reason: string }[] = [
-  { to: "metrics", reason: "your traction figures" },
-  { to: "numbers", reason: "both say lead with numbers" },
-  { to: "thesis", reason: "same topic: raising a seed round" },
+  { to: "metrics", reason: "the traction every form asks for" },
+  { to: "pitch", reason: "how applications open" },
+  { to: "partners", reason: "same topic: getting into an accelerator" },
 ];
 
-export type TaskId = "meeting" | "email" | "plan";
-export type OutputMode = "Full Prep Brief" | "Draft Email" | "Action Steps";
+export type TaskId = "apply" | "email" | "meeting";
 
 export interface AnswerPart {
   text: string;
@@ -160,150 +171,187 @@ export interface AnswerPart {
   general?: boolean;
 }
 
-export interface AnswerRow {
-  label: string;
-  parts: readonly AnswerPart[];
+/** One piece of work Nexus produces in Deliver, with the label it ends on. */
+export interface WorkItem {
+  name: string;
+  detail: string;
+  done: string;
 }
 
 export interface Task {
   id: TaskId;
   chip: string;
   prompt: string;
-  mode: OutputMode;
-  outputTitle: string;
+  mode: string;
   /** Fragments the Surface stage lights up, in the order they appear in the Vault. */
   recalled: readonly CaptureId[];
   generalTopic: string;
-  rows: readonly AnswerRow[];
-  /** The same request answered without the user's Vault. */
-  generic: readonly AnswerRow[];
+  /** What Nexus offers to do once it has the fragments; the first is the one taken. */
+  options: readonly [string, string, string];
+  title: string;
+  items: readonly [WorkItem, WorkItem, WorkItem];
+  /** The status words for each piece of work and for the run as a whole. */
+  verbs: { making: string; made: string; sending: string };
+  lines: { making: string; review: string; sending: string; done: string };
+  /** One piece of the work, shown for review, with the fragment behind each sentence. */
+  preview: { label: string; parts: readonly AnswerPart[] };
+  /** The same request answered by generic AI, which stops at the answer. */
+  generic: { parts: readonly AnswerPart[]; foot: string };
   narration: { recall: string; create: string };
 }
 
 export const TASKS: readonly Task[] = [
   {
-    id: "meeting",
-    chip: "Prep for a meeting",
-    prompt: "I’m meeting Rajesh from Accel tomorrow about my seed round. Help me prepare.",
-    mode: "Full Prep Brief",
-    outputTitle: "Prep brief: Rajesh, Accel",
-    recalled: ["podcast", "metrics", "numbers", "edtech"],
-    generalTopic: "Seed pitch structure",
-    rows: [
-      {
-        label: "Context",
-        parts: [{ text: "Seed-round intro. Rajesh has backed two edtech startups, so he knows your market.", from: ["edtech"] }],
-      },
-      {
-        label: "Approach",
-        parts: [
-          { text: "Open with traction: 1,240 paying learners, up 18% a month.", from: ["metrics", "podcast"] },
-          { text: "Skip the buzzwords; he prefers numbers.", from: ["numbers"] },
-        ],
-      },
-      {
-        label: "Risks",
-        parts: [
-          { text: "Expect a comparison with his edtech bets. Know your retention cold.", from: ["edtech", "podcast"] },
-          { text: "Have burn and runway ready.", general: true },
-        ],
-      },
-      {
-        label: "Opening line",
-        parts: [{ text: "“We grew 18% last month. Here’s what drove it.”", from: ["metrics"] }],
-      },
+    id: "apply",
+    chip: "Apply to accelerators",
+    prompt: "I need to apply to startup accelerators.",
+    mode: "Take action",
+    recalled: ["reel", "metrics", "pitch", "team"],
+    generalTopic: "Accelerator applications",
+    options: [
+      "Apply to all 3 accelerators from the reel",
+      "Draft one application for you to review",
+      "Add the 3 deadlines to your calendar",
     ],
-    generic: [
-      { label: "Context", parts: [{ text: "A seed meeting with a venture capital firm." }] },
-      { label: "Approach", parts: [{ text: "Open with the problem you solve, then size the market." }] },
-      { label: "Risks", parts: [{ text: "Investors may ask about competition." }] },
-      { label: "Opening line", parts: [{ text: "“Thanks for your time. Let me share our vision.”" }] },
+    title: "3 applications",
+    items: [
+      { name: "Northstar Accelerator", detail: "Closes Oct 31", done: "Sent" },
+      { name: "Foundry 100", detail: "Closes Nov 4", done: "Sent" },
+      { name: "Sprint Labs", detail: "Closes Nov 8", done: "Sent" },
     ],
+    verbs: { making: "Creating", made: "Drafted", sending: "Sending" },
+    lines: {
+      making: "Creating applications…",
+      review: "3 drafts ready. Need any refining?",
+      sending: "Sending applications…",
+      done: "Here. Done. 3 applications sent.",
+    },
+    preview: {
+      label: "Northstar asks: What do you do, and what traction do you have?",
+      parts: [
+        { text: "Cohort courses that get learners job-ready in 12 weeks.", from: ["pitch"] },
+        { text: "1,240 paying learners, growing 18% a month.", from: ["metrics"] },
+        { text: "Two founders, full-time since March.", from: ["team"] },
+        { text: "Kept within the form’s word limit.", general: true },
+      ],
+    },
+    generic: {
+      parts: [
+        {
+          text: "We are an innovative edtech startup leveraging AI to disrupt education and empower learners everywhere.", // taste-skill-ignore: generic AI's buzzwords are the point
+        },
+        { text: "Our passionate team is on a mission to transform how the world learns, and we are seeing strong early traction." },
+      ],
+      foot: "Generic AI stops at the answer. You paste it into each form and send it yourself.",
+    },
     narration: {
-      recall: "Surface: four fragments light up and flow into the task, alongside general knowledge about seed pitches.",
-      create: "Deliver: a prep brief arrives, and every personal detail shows the fragment it came from.",
+      recall: "Surface: four fragments light up, and Nexus offers three things it can do. It takes the first: apply to all three.",
+      create: "Deliver: three applications are drafted, you give the green light, and Nexus sends them.",
     },
   },
   {
     id: "email",
     chip: "Draft an email",
-    prompt: "Draft a note to Rajesh confirming tomorrow’s meeting.",
-    mode: "Draft Email",
-    outputTitle: "Draft email to Rajesh",
-    recalled: ["podcast", "metrics", "numbers"],
-    generalTopic: "Short pre-meeting emails",
-    rows: [
-      { label: "Subject", parts: [{ text: "Tomorrow at 11: our seed round, in numbers", from: ["numbers"] }] },
-      {
-        label: "Body",
-        parts: [
-          { text: "Hi Rajesh, looking forward to tomorrow." },
-          { text: "I’ll keep it to numbers: 1,240 paying learners, growing 18% a month.", from: ["metrics", "numbers"] },
-          { text: "I’ll bring cohort retention too.", from: ["podcast"] },
-          { text: "Happy to send the deck beforehand.", general: true },
-        ],
-      },
+    prompt: "Ask my mentor Priya for a warm intro to Northstar.",
+    mode: "Draft & send",
+    recalled: ["reel", "metrics", "pitch"],
+    generalTopic: "Warm intro requests",
+    options: [
+      "Write the intro request and send it to Priya",
+      "Write it with a blurb she can forward",
+      "Remind you to follow up in 3 days",
     ],
-    generic: [
-      { label: "Subject", parts: [{ text: "Excited to connect!" }] },
-      {
-        label: "Body",
-        parts: [
-          {
-            text: "Hi Rajesh, I hope this finds you well. We’re disrupting education with an innovative, AI-first platform, and I’d love to share our vision.",
-          },
-        ],
-      },
+    title: "Intro email",
+    items: [
+      { name: "Email to Priya", detail: "Intro request", done: "Sent" },
+      { name: "Blurb for Northstar", detail: "For her to forward", done: "Attached" },
+      { name: "Follow-up", detail: "In 3 days", done: "Scheduled" },
     ],
+    verbs: { making: "Writing", made: "Written", sending: "Sending" },
+    lines: {
+      making: "Writing the email…",
+      review: "Draft ready. Need any refining?",
+      sending: "Sending to Priya…",
+      done: "Here. Done. Email sent to Priya.",
+    },
+    preview: {
+      label: "To Priya · Intro to Northstar?",
+      parts: [
+        { text: "Hi Priya, Northstar’s applications close Oct 31.", from: ["reel"] },
+        { text: "We’re at 1,240 paying learners, up 18% a month.", from: ["metrics"] },
+        { text: "Cohort courses that get learners job-ready in 12 weeks; a blurb you can forward is attached.", from: ["pitch"] },
+        { text: "Would you be open to introducing us?", general: true },
+      ],
+    },
+    generic: {
+      parts: [
+        {
+          text: "Hi Priya, I hope you’re doing well! I was wondering if you might be able to help me connect with some accelerators.",
+        },
+      ],
+      foot: "Generic AI stops at the draft. You find the details, fix it and send it yourself.",
+    },
     narration: {
-      recall: "Surface: three fragments come back, your numbers, how Rajesh likes to be pitched and the podcast you just dropped.",
-      create: "Deliver: the draft sticks to numbers, because you once noted that Rajesh prefers them.",
+      recall: "Surface: three fragments come back, the reel, your numbers and your one-liner, and Nexus offers to write and send the email.",
+      create: "Deliver: the email and a forwardable blurb are written, you approve, and the email is sent.",
     },
   },
   {
-    id: "plan",
-    chip: "Plan a project",
-    prompt: "Plan my seed round for the next six weeks.",
-    mode: "Action Steps",
-    outputTitle: "Seed round plan",
-    recalled: ["metrics", "edtech", "review", "thesis"],
-    generalTopic: "How seed rounds usually run",
-    rows: [
-      { label: "Week 1", parts: [{ text: "Rebuild the deck around 18% monthly growth.", from: ["metrics"] }] },
-      {
-        label: "Week 2",
-        parts: [
-          { text: "Shortlist funds that back ambitious, high-growth companies, as Accel’s seed thesis does.", from: ["thesis"] },
-          { text: "Ask for warm intros.", general: true },
-        ],
-      },
-      { label: "Weeks 3–4", parts: [{ text: "First meetings. Start with Rajesh; he knows edtech.", from: ["edtech"] }] },
-      { label: "Fridays", parts: [{ text: "A 15-minute review of what each meeting taught you.", from: ["review"] }] },
+    id: "meeting",
+    chip: "Prep for a meeting",
+    prompt: "Prep me for the Northstar interview on Friday.",
+    mode: "Full Prep Brief",
+    recalled: ["reel", "metrics", "team", "partners"],
+    generalTopic: "Accelerator interviews",
+    options: [
+      "Write a one-page brief for the interview",
+      "Draft answers to the questions they ask most",
+      "Block 30 minutes on Thursday to rehearse",
     ],
-    generic: [
-      { label: "Week 1", parts: [{ text: "Polish your pitch deck." }] },
-      { label: "Week 2", parts: [{ text: "Research investors in your space." }] },
-      { label: "Weeks 3–4", parts: [{ text: "Take as many meetings as you can." }] },
-      { label: "Fridays", parts: [{ text: "Follow up with every investor." }] },
+    title: "Interview prep",
+    items: [
+      { name: "One-page brief", detail: "Context, approach, risks", done: "Saved" },
+      { name: "Likely questions", detail: "6 answers", done: "Saved" },
+      { name: "Rehearsal", detail: "Thu · 30 min", done: "Booked" },
     ],
+    verbs: { making: "Preparing", made: "Ready", sending: "Saving" },
+    lines: {
+      making: "Preparing your interview kit…",
+      review: "Prep ready. Need any refining?",
+      sending: "Saving your prep…",
+      done: "Here. Done. Your Northstar prep is ready.",
+    },
+    preview: {
+      label: "Brief · Opening line",
+      parts: [
+        { text: "“We grew 18% last month. Here’s what drove it.”", from: ["metrics"] },
+        { text: "Partners read traction, team and why now first, so lead with those.", from: ["partners"] },
+        { text: "Two founders, full-time since March.", from: ["team"] },
+        { text: "Have burn and runway ready.", general: true },
+      ],
+    },
+    generic: {
+      parts: [{ text: "Research the accelerator, practise your pitch and prepare questions to ask them." }],
+      foot: "Generic AI stops at the advice. You write the brief and book the time yourself.",
+    },
     narration: {
-      recall: "Surface: a different set lights up for this task, including the Accel article and a weekly-review tweet.",
-      create: "Deliver: a six-week plan built from what you dropped, with general advice marked as such.",
+      recall: "Surface: a different set lights up for this task, including the article on what partners read first.",
+      create: "Deliver: a brief, likely questions and a rehearsal slot are prepared, approved and saved.",
     },
   },
 ];
 
 export const TASK_BY_ID = Object.fromEntries(TASKS.map((t) => [t.id, t])) as Record<TaskId, Task>;
 
-export const DEFAULT_TASK_ID: TaskId = "meeting";
+export const DEFAULT_TASK_ID: TaskId = "apply";
 
 /** Spoken by the live region when a stage starts. */
 export function narrationFor(stage: StageId, task: Task): string {
   switch (stage) {
     case "capture":
-      return "Drop: a YouTube link is dropped into Nexus.";
+      return "Drop: an Instagram reel is dropped into Nexus.";
     case "understand":
-      return "Absorb: Nexus reads the video and pulls out a title, a summary and the key takeaway.";
+      return "Absorb: Nexus reads the reel and pulls out the three accelerators, their deadlines and the key takeaway.";
     case "connect":
       return "Connect: the new fragment is stitched to three you dropped before.";
     case "ask":
