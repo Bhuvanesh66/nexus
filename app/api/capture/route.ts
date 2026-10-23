@@ -24,6 +24,22 @@ function strings(value: unknown, max: number, lower = false) {
   return [...new Set(lower ? list.map((v) => v.toLowerCase()) : list)].slice(0, max);
 }
 
+const MAX_DOCUMENT = 150_000;
+
+/** A dropped file's name and extracted text, trimmed to a size worth storing; null when there is no text. */
+function toDocument(value: unknown) {
+  if (!value || typeof value !== "object") return null;
+  const v = value as { name?: unknown; kind?: unknown; text?: unknown };
+  if (typeof v.name !== "string" || typeof v.text !== "string") return null;
+  const text = v.text.trim().slice(0, MAX_DOCUMENT);
+  if (!text) return null;
+  return {
+    name: v.name.trim().slice(0, 200) || "Untitled file",
+    kind: v.kind === "pdf" ? ("pdf" as const) : ("text" as const),
+    text,
+  };
+}
+
 /** Checks Claude's JSON against the 8.1 contract; null when it does not hold. */
 function toMeta(value: unknown): Meta | null {
   if (!value || typeof value !== "object") return null;
@@ -49,10 +65,19 @@ export async function POST(request: Request) {
   if (!session) return SIGNED_OUT();
   const { supabase, user } = session;
 
-  const body = (await request.json().catch(() => null)) as { input?: unknown; pasted?: unknown; force?: unknown } | null;
+  const body = (await request.json().catch(() => null)) as {
+    input?: unknown;
+    pasted?: unknown;
+    force?: unknown;
+    document?: unknown;
+  } | null;
   const input = typeof body?.input === "string" ? body.input.trim() : "";
   const pasted = typeof body?.pasted === "string" ? body.pasted.trim() : "";
-  if (!input) return fail(400, "empty", "Drop a note or a link first.");
+  const file = toDocument(body?.document);
+  if (body?.document !== undefined && !file) {
+    return fail(400, "empty-file", "Nexus couldn’t find any text in that file. Try another, or paste the text.");
+  }
+  if (!input && !file) return fail(400, "empty", "Drop a note, a link or a file first.");
   if (input.length > MAX_INPUT || pasted.length > MAX_INPUT) {
     return fail(400, "too-long", "That’s over 10,000 characters. Trim it a little and drop it again.");
   }
@@ -63,8 +88,13 @@ export async function POST(request: Request) {
   let raw = input;
   let titleHint: string | null = null;
 
-  const link = parseLink(input);
-  if (link) {
+  // A dropped file arrives as text already read in the browser (PDFs via pdf.js); the note, if any, rides along.
+  const link = file ? null : parseLink(input);
+  if (file) {
+    type = file.kind === "pdf" ? "pdf" : "text";
+    titleHint = file.name.replace(/\.[a-z0-9]{1,5}$/i, "");
+    raw = `${file.kind === "pdf" ? "PDF" : "File"}: ${file.name}\n\n${input ? `The user's note: ${input}\n\n` : ""}${file.text}`;
+  } else if (link) {
     if (!isPublicHost(link)) return fail(400, "bad-link", "Nexus can’t reach that address. Paste a public web link.");
     type = detectType(link);
     sourceUrl = normalizeUrl(link);
@@ -142,8 +172,12 @@ export async function POST(request: Request) {
   const summarySource = meta ? "ai" : "basic";
   if (!meta) {
     // Links are stored as a heading paragraph then the body; the plain extract reads the body.
-    const body = link ? raw.split("\n\n").slice(1).join("\n\n").replace(/^(Transcript|The user's own summary):\n/, "") : raw;
-    meta = basicSummary(body || raw, titleHint);
+    const content = file
+      ? file.text
+      : link
+        ? raw.split("\n\n").slice(1).join("\n\n").replace(/^(Transcript|The user's own summary):\n/, "")
+        : raw;
+    meta = basicSummary(content || raw, titleHint);
   }
 
   // Connect: embed the summary and find the nearest fragments this user already has.

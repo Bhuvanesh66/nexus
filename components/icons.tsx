@@ -231,3 +231,11 @@ export function YouTubeLogo(props: LogoProps) {
     />
   );
 }
+
+export function PaperclipIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M15.25 9.25 9.6 14.9a3.25 3.25 0 0 1-4.6-4.6l6.1-6.1a2.15 2.15 0 0 1 3.05 3.05l-6 6a1.05 1.05 0 0 1-1.5-1.5l5.5-5.5" />
+    </Icon>
+  );
+}

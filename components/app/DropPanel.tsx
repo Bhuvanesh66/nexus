@@ -1,10 +1,11 @@
 "use client";
 
-import { useRef, useState, type FormEvent, type KeyboardEvent } from "react";
-import { ArrowIcon, LinkIcon } from "@/components/icons";
+import { useEffect, useRef, useState, type DragEvent, type FormEvent, type KeyboardEvent } from "react";
+import { ArrowIcon, LinkIcon, NoteIcon, PaperclipIcon, PdfLogo } from "@/components/icons";
 import { detectType, parseLink } from "@/lib/ingest/detect";
 import { SOURCE_LABEL, type CaptureSummary, type Connection } from "@/lib/vault";
 import styles from "./app.module.css";
+import { ACCEPT, canTake, draggedText, MAX_FILE_CHARS, readFile, type Attached } from "./files";
 import { api, Stages, useSlow, useStage } from "./shared";
 import { formatDate, SourceIcon } from "./SourceIcon";
 
@@ -32,22 +33,95 @@ export function DropPanel({
   const [input, setInput] = useState("");
   const [pasted, setPasted] = useState("");
   const [state, setState] = useState<State>({ kind: "idle" });
+  const [file, setFile] = useState<Attached | null>(null);
+  const [reading, setReading] = useState<string | null>(null);
+  const [fileNote, setFileNote] = useState<string | null>(null);
+  const [dragging, setDragging] = useState(false);
   const abort = useRef<AbortController | null>(null);
   const field = useRef<HTMLTextAreaElement>(null);
+  const picker = useRef<HTMLInputElement>(null);
+  const dragDepth = useRef(0);
 
-  const link = parseLink(input);
-  const kind = link ? SOURCE_LABEL[detectType(link)] : input.trim() ? "Note" : null;
+  const link = file ? null : parseLink(input);
+  const kind = file ? SOURCE_LABEL[file.kind === "pdf" ? "pdf" : "text"] : link ? SOURCE_LABEL[detectType(link)] : input.trim() ? "Note" : null;
   const working = state.kind === "working";
-  const stage = useStage(working, link ? [0, 3500, 8000] : [0, 1200, 4000]);
+  const ready = Boolean(input.trim() || file) && !reading;
+  const stage = useStage(working, link || file ? [0, 3500, 8000] : [0, 1200, 4000]);
   const slow = useSlow(working, 25_000);
 
+  // A file dropped beside the box would make the browser open it and leave the app; keep it here instead.
+  useEffect(() => {
+    const guard = (event: globalThis.DragEvent) => {
+      if (Array.from(event.dataTransfer?.types ?? []).includes("Files")) event.preventDefault();
+    };
+    window.addEventListener("dragover", guard);
+    window.addEventListener("drop", guard);
+    return () => {
+      window.removeEventListener("dragover", guard);
+      window.removeEventListener("drop", guard);
+    };
+  }, []);
+
+  async function attach(chosen: File, others = 0) {
+    setReading(chosen.name);
+    setFileNote(null);
+    const result = await readFile(chosen);
+    setReading(null);
+    if (result.ok) {
+      setFile(result.file);
+      setState({ kind: "idle" });
+      if (others) setFileNote(`Nexus takes one file at a time, so it added ${chosen.name}.`);
+      else if (result.file.chars > MAX_FILE_CHARS) {
+        setFileNote(`That’s a long one: Nexus keeps the first ${MAX_FILE_CHARS.toLocaleString("en-IN")} characters.`);
+      }
+      field.current?.focus();
+    } else setFileNote(result.message);
+  }
+
+  function onDragEnter(event: DragEvent) {
+    if (working || !canTake(event.dataTransfer)) return;
+    event.preventDefault();
+    dragDepth.current += 1;
+    setDragging(true);
+  }
+
+  function onDragOver(event: DragEvent) {
+    if (working || !canTake(event.dataTransfer)) return;
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "copy";
+  }
+
+  function onDragLeave() {
+    dragDepth.current = Math.max(0, dragDepth.current - 1);
+    if (dragDepth.current === 0) setDragging(false);
+  }
+
+  function onDrop(event: DragEvent) {
+    event.preventDefault();
+    dragDepth.current = 0;
+    setDragging(false);
+    if (working) return;
+    const files = Array.from(event.dataTransfer.files);
+    if (files.length) {
+      void attach(files[0], files.length - 1);
+      return;
+    }
+    const text = draggedText(event.dataTransfer);
+    if (text) {
+      setInput((current) => (current.trim() ? `${current.trimEnd()}\n${text}` : text).slice(0, MAX));
+      setState({ kind: "idle" });
+      field.current?.focus();
+    }
+  }
+
   async function send(options: { force?: boolean; pasted?: string } = {}) {
-    if (!input.trim() || working) return;
+    if (!ready || working) return;
     abort.current = new AbortController();
     setState({ kind: "working" });
+    const document = file ? { name: file.name, kind: file.kind, text: file.text } : undefined;
     const result = await api<Saved>("/api/capture", {
       method: "POST",
-      body: JSON.stringify({ input, ...options }),
+      body: JSON.stringify({ input, document, ...options }),
       signal: abort.current.signal,
     });
     if (result.ok) {
@@ -55,6 +129,8 @@ export function DropPanel({
       onSaved(result.data.capture);
       setInput("");
       setPasted("");
+      setFile(null);
+      setFileNote(null);
       if (field.current) field.current.style.height = "";
       return;
     }
@@ -91,22 +167,79 @@ export function DropPanel({
           Drop what you <span data-tone="drop">just learned.</span>
         </h1>
         <p className={styles.lead}>
-          A note, a YouTube video, an article, a post on X. Nexus reads it, pulls out what matters and stitches it
+          A note, a YouTube video, an article, a post on X, a PDF. Nexus reads it, pulls out what matters and stitches it
           to what you dropped before.
         </p>
 
-        <form className={styles.composer} onSubmit={onSubmit} data-tone="drop">
+        <form
+          className={styles.composer}
+          onSubmit={onSubmit}
+          data-tone="drop"
+          data-dragging={dragging || undefined}
+          onDragEnter={onDragEnter}
+          onDragOver={onDragOver}
+          onDragLeave={onDragLeave}
+          onDrop={onDrop}
+        >
+          {dragging ? (
+            <div className={styles.dropOverlay} aria-hidden="true">
+              <span className={styles.dropOverlayIcons}>
+                <PdfLogo size={30} />
+                <NoteIcon size={26} />
+                <LinkIcon size={26} />
+              </span>
+              <strong>Drop it here</strong>
+              <span>A PDF, a text file, or a link from another tab</span>
+            </div>
+          ) : null}
           <label htmlFor="drop-input" className="sr-only">
-            What did you just learn?
+            {file ? "A note about this file (optional)" : "What did you just learn?"}
           </label>
+          {file || reading ? (
+            <div className={styles.fileChip} data-kind={file?.kind ?? "pdf"}>
+              {file?.kind === "text" ? <NoteIcon size={22} /> : <PdfLogo size={26} />}
+              <span className={styles.fileText}>
+                <span className={styles.fileName}>{file?.name ?? reading}</span>
+                <span className={styles.fileMeta}>
+                  {file
+                    ? [
+                        file.pages ? `${file.pages} ${file.pages === 1 ? "page" : "pages"}` : null,
+                        `${Math.min(file.chars, MAX_FILE_CHARS).toLocaleString("en-IN")} characters`,
+                      ]
+                        .filter(Boolean)
+                        .join(" · ")
+                    : "Reading the file…"}
+                </span>
+              </span>
+              {file ? (
+                <button
+                  type="button"
+                  className={styles.fileRemove}
+                  onClick={() => {
+                    setFile(null);
+                    setFileNote(null);
+                  }}
+                  aria-label={`Remove ${file.name}`}
+                  disabled={working}
+                >
+                  ×
+                </button>
+              ) : null}
+            </div>
+          ) : null}
           <textarea
             id="drop-input"
             ref={field}
             className={styles.field}
+            data-compact={file || reading ? "" : undefined}
             value={input}
             maxLength={MAX}
-            rows={3}
-            placeholder="Paste a link, type a note, drop anything you just learned…"
+            rows={file || reading ? 2 : 3}
+            placeholder={
+              file || reading
+                ? "Add a note about this file (optional)…"
+                : "Paste a link, type a note, drop anything you just learned…"
+            }
             onChange={(e) => {
               setInput(e.target.value);
               e.target.style.height = "";
@@ -117,22 +250,51 @@ export function DropPanel({
             disabled={working}
           />
           <div className={styles.composerFoot}>
-            <span className={styles.detected} aria-live="polite">
-              {kind ? (
-                <>
-                  {link ? <LinkIcon size={14} /> : null}
-                  {kind}
-                  {!link ? <span className={styles.count}>{input.length.toLocaleString("en-IN")} / 10,000</span> : null}
-                </>
-              ) : (
-                <span className={styles.hintKeys}>Ctrl + Enter to drop</span>
-              )}
+            <span className={styles.footStart}>
+              <button
+                type="button"
+                className={styles.attach}
+                onClick={() => picker.current?.click()}
+                disabled={working || Boolean(reading)}
+              >
+                <PaperclipIcon size={18} />
+                Attach a file
+              </button>
+              <input
+                ref={picker}
+                type="file"
+                accept={ACCEPT}
+                hidden
+                onChange={(e) => {
+                  const chosen = e.target.files?.[0];
+                  if (chosen) void attach(chosen);
+                  e.target.value = "";
+                }}
+              />
+              <span className={styles.detected} aria-live="polite">
+                {kind ? (
+                  <>
+                    {link ? <LinkIcon size={14} /> : null}
+                    {kind}
+                    {!link && !file ? (
+                      <span className={styles.count}>{input.length.toLocaleString("en-IN")} / 10,000</span>
+                    ) : null}
+                  </>
+                ) : (
+                  <span className={styles.hintKeys}>or drag a PDF, a text file or a link here</span>
+                )}
+              </span>
             </span>
-            <button type="submit" className="button" disabled={!input.trim() || working}>
+            <button type="submit" className="button" disabled={!ready || working}>
               {working ? "Absorbing…" : "Drop it"}
               <ArrowIcon size={18} weight={2.5} className="button-arrow" />
             </button>
           </div>
+          {fileNote ? (
+            <p className={styles.fileNote} role="status">
+              {fileNote}
+            </p>
+          ) : null}
         </form>
 
         <div className={styles.outcome} aria-live="polite">

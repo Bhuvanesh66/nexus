@@ -1,6 +1,6 @@
 /** Shapes shared by the API routes and the app. Safe to import on the client. */
 
-export type CaptureType = "youtube" | "url" | "text" | "tweet";
+export type CaptureType = "youtube" | "url" | "text" | "tweet" | "pdf";
 
 export type CaptureSummary = {
   id: string;
@@ -38,6 +38,7 @@ export const SOURCE_LABEL: Record<CaptureType, string> = {
   url: "Web page",
   text: "Note",
   tweet: "Post on X",
+  pdf: "PDF",
 };
 
 export const EMPTY_VAULT_LINE =

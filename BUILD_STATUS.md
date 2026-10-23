@@ -59,8 +59,7 @@ afterwards, so `/stats` starts at zero. Email sign-up is switched off in Supabas
 
 ## Blockers (need the owner)
 
-1. **Google sign-in**: the Google provider is not enabled in Supabase. Needs a Google OAuth client (steps in
-   `README.md`). Until then the CTA lands on an honest "Google sign-in isn't switched on yet" page.
+1. ~~**Google sign-in**~~ — done (Oct 24): the Google provider is on in Supabase and a real Google account has signed in.
 2. **AI**: no `ANTHROPIC_API_KEY` / `OPENAI_API_KEY`, and Vercel AI Gateway refuses requests until the team has
    a card on file. Until then drops get a labelled basic summary and Hand off can't write. Claude summaries,
    Claude-confirmed connections, semantic retrieval and the five generated outputs are implemented but unverified
@@ -70,5 +69,12 @@ afterwards, so `/stats` starts at zero. Email sign-up is switched off in Supabas
    from a home connection). The paste-a-summary recovery covers it; a reliable fix is a transcript API or a
    residential proxy, which needs an account and a key.
 
+## Added after the MVP (Oct 24)
+- Drag and drop into the Drop box: PDFs (text read in the browser with pdf.js via unpdf, up to 20 MB, first 150,000
+  characters kept), text files, and links or text dragged from another tab; an Attach a file button for phones;
+  images and scanned PDFs get a plain explanation. PDFs are their own `pdf` source type
+  (`supabase/migrations/20261024090000_pdf_captures.sql`). Verified with a 15-page PDF, a dragged link, a .txt and a .png.
+- Ink navbar with the six-hue band on the landing page, sign-in, stats and the dashboard.
+
 ## Not built (spec §9 roadmap)
-Voice, WhatsApp, PDF, Instagram transcription, Chrome extension, OCR, multi-step execution, reminders.
+Voice, WhatsApp, Instagram transcription, Chrome extension, OCR, multi-step execution, reminders.

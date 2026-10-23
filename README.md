@@ -9,7 +9,8 @@ Live: https://second-brain-six-swart.vercel.app (Vercel project `second-brain`, 
 `github.com/Bhuvanesh66/nexus`; every push to `main` is a production deploy, other branches get previews).
 
 - `/` the landing page, with an in-browser demo of the loop (sample data, no network calls).
-- `/auth/sign-in` → Google (Supabase Auth) → `/dashboard`: **Drop** (notes, YouTube, articles, posts on X),
+- `/auth/sign-in` → Google (Supabase Auth) → `/dashboard`: **Drop** (notes, YouTube, articles, posts on X, and
+  PDFs or text files dragged in or attached),
   **Hand off** (five output modes, cited sources, Copy, Open in Gmail) and **Your Vault** (search, details,
   connections, delete).
 - `/stats` public totals: people signed up, fragments dropped, hand-offs answered.
@@ -41,7 +42,7 @@ Copy `.env.example` to `.env.local` (or `vercel env pull .env.local`).
 | What | Where it is configured | Status |
 | --- | --- | --- |
 | Supabase project `nexus` (`okiivqojobjwrbncozuf`, Mumbai) | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` on Vercel | Live; schema from `supabase/migrations/` |
-| Google sign-in | Supabase dashboard → Authentication → Sign In / Providers → Google | Needs a Google OAuth client (below) |
+| Google sign-in | Supabase dashboard → Authentication → Sign In / Providers → Google | Live |
 | Claude (Haiku 5.5 to summarise, Sonnet 5.5 to write) | `ANTHROPIC_API_KEY`, or `AI_GATEWAY_API_KEY` | Not set yet |
 | Embeddings (`text-embedding-3-small`, 1536-d) | `OPENAI_API_KEY`, or `AI_GATEWAY_API_KEY` | Not set yet |
 

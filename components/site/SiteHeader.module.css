@@ -1,3 +1,4 @@
+/* An ink bar: it frames the colourful page, carries the logo's own colours, and ends on the loop's six hues. */
 .header {
   position: relative;
   display: flex;
@@ -6,6 +7,20 @@
   gap: 1rem;
   min-height: 4rem;
   padding: 0 var(--margin);
+  background: var(--ink);
+  color: var(--on-ink);
+}
+
+.header::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0;
+  height: 3px;
+  background: var(--spectrum-band);
+}
+
+.header :focus-visible {
+  outline-color: var(--on-ink);
 }
 
 .wordmark {
@@ -19,7 +34,6 @@
   text-decoration: none;
 }
 
-
 .links {
   display: flex;
   align-items: center;
@@ -31,16 +45,38 @@
   display: inline-flex;
   align-items: center;
   min-height: 2.75rem;
+  color: var(--on-ink-muted);
   text-decoration: underline;
   text-decoration-color: transparent;
   text-decoration-thickness: 0.07em;
   text-underline-offset: 0.25em;
-  transition: text-decoration-color var(--t-hover) ease;
+  transition:
+    color var(--t-hover) ease,
+    text-decoration-color var(--t-hover) ease;
+}
+
+.links a.signIn {
+  min-height: 2.5rem;
+  padding: 0 1rem;
+  border: 1px solid rgb(255 255 255 / 0.28);
+  border-radius: var(--radius);
+  color: var(--on-ink);
+  font-weight: 600;
+  text-decoration: none;
+  transition:
+    background-color var(--t-hover) ease,
+    border-color var(--t-hover) ease;
 }
 
 @media (hover: hover) and (pointer: fine) {
   .links a:hover {
+    color: var(--on-ink);
     text-decoration-color: currentColor;
+  }
+
+  .links a.signIn:hover {
+    border-color: var(--on-ink);
+    background: rgb(255 255 255 / 0.08);
   }
 }
 

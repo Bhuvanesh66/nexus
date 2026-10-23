@@ -19,7 +19,7 @@ needs it, with the sources shown.
 - Every answer shows which of the user's fragments it used; personal and general knowledge stay distinct.
 
 ### Non-goals (this sprint)
-Voice, WhatsApp, PDF, Instagram transcription, Chrome extension, OCR, multi-step autonomous execution,
+Voice, WhatsApp, Instagram transcription, Chrome extension, OCR, multi-step autonomous execution,
 reminders, collaboration, a new landing page, a test suite beyond smoke checks.
 
 ## 2. User journeys
@@ -145,5 +145,6 @@ As in `Nexus-Feature-List.md` §12 and the build brief §12; tracked with eviden
 - Google sign-in needs a Google OAuth client entered in Supabase (manual, cannot be created from the CLI).
 - AI needs `ANTHROPIC_API_KEY` + `OPENAI_API_KEY`, or a card on the Vercel team for AI Gateway.
 - YouTube refuses transcripts from Vercel's datacenter IPs (verified); the paste-a-summary recovery covers it.
-- Instagram reels and PDFs are not transcribed (roadmap); a reel URL is treated as a web page.
+- Instagram reels are not transcribed (roadmap); a reel URL is treated as a web page. PDFs are read in the browser
+  (added Oct 24); scanned PDFs without a text layer are refused with an explanation.
 - No streaming responses; a slow call shows "Still thinking…" with Cancel.

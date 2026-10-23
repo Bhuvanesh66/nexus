@@ -58,6 +58,9 @@
   --violet-deep: #6d28d9; /* taste-skill-ignore: part of the brand's cool spectrum, the same hues as the logo */
   --violet-tint: #ede9fe;
 
+  /* the loop's six hues in order, as solid bands (hard stops, no blending): the foot of the ink navbars */
+  --spectrum-band: linear-gradient(90deg, var(--teal) 0 16.667%, var(--cyan) 0 33.333%, var(--sky) 0 50%, var(--blue) 0 66.667%, var(--indigo) 0 83.333%, var(--violet) 0); /* taste-skill-ignore: six solid bands, not a fade */
+
   --font-text: -apple-system, BlinkMacSystemFont, "Segoe UI Variable Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
   --font-display: -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
 

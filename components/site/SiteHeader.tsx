@@ -26,7 +26,7 @@ export function SiteHeader({ links = true }: { links?: boolean }) {
             </>
           ) : null}
           <li>
-            <a href={SIGN_IN_HREF}>
+            <a href={SIGN_IN_HREF} className={styles.signIn}>
               Sign in
             </a>
           </li>

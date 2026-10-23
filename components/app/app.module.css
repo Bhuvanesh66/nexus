@@ -13,6 +13,7 @@
 
 /* ---------- app bar ---------- */
 
+/* The ink bar the landing page uses too, with the loop's six hues as a band along its foot. */
 .bar {
   position: sticky;
   top: 0;
@@ -23,9 +24,20 @@
   gap: 1rem;
   height: var(--app-bar);
   padding: 0 var(--margin);
-  background: rgb(255 255 255 / 0.92);
-  backdrop-filter: blur(12px);
-  border-bottom: 1px solid var(--ui-border);
+  background: var(--ink);
+  color: var(--on-ink);
+}
+
+.bar::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0;
+  height: 3px;
+  background: var(--spectrum-band);
+}
+
+.bar :focus-visible {
+  outline-color: var(--on-ink);
 }
 
 .brand {
@@ -45,7 +57,7 @@
   gap: 4px;
   padding: 4px;
   border-radius: 12px;
-  background: var(--surface);
+  background: rgb(255 255 255 / 0.08);
 }
 
 .tab {
@@ -56,7 +68,7 @@
   min-height: 2.5rem;
   padding: 0 0.95rem;
   border-radius: 9px;
-  color: var(--muted);
+  color: var(--on-ink-muted);
   font-size: 0.9375rem;
   font-weight: 600;
   text-decoration: none;
@@ -78,14 +90,11 @@
 .tab[aria-current="page"] {
   background: var(--bg);
   color: var(--tone);
-  box-shadow:
-    0 1px 2px rgb(17 17 17 / 0.08),
-    0 0 0 1px rgb(17 17 17 / 0.04);
 }
 
 @media (hover: hover) and (pointer: fine) {
   .tab:not([aria-current="page"]):hover {
-    color: var(--ink);
+    color: var(--on-ink);
   }
 }
 
@@ -111,7 +120,7 @@
   background: var(--violet-tint);
   color: var(--violet-deep);
   font-weight: 700;
-  box-shadow: 0 0 0 2px var(--bg), 0 0 0 3.5px var(--ui-control);
+  box-shadow: 0 0 0 2px var(--ink), 0 0 0 3.5px rgb(255 255 255 / 0.35);
 }
 
 .accountMenu {
@@ -251,9 +260,159 @@
   --tone-tint: var(--accent-tint);
 }
 
-.composer:focus-within {
+.composer:focus-within,
+.composer[data-dragging] {
   border-color: var(--tone);
   box-shadow: 0 0 0 4px var(--tone-tint);
+}
+
+.composer {
+  position: relative;
+}
+
+/* shown while something droppable is dragged over the box */
+.dropOverlay {
+  position: absolute;
+  inset: 6px;
+  z-index: 2;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 0.35rem;
+  border: 2px dashed var(--teal);
+  border-radius: 10px;
+  background: rgb(204 251 241 / 0.94);
+  color: var(--teal-deep);
+  text-align: center;
+  pointer-events: none;
+}
+
+.dropOverlay strong {
+  font-size: var(--step-lead);
+}
+
+.dropOverlay span:last-child {
+  font-size: var(--step-small);
+}
+
+.dropOverlayIcons {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.25rem;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .dropOverlay {
+    animation: overlay-in 160ms var(--ease-out);
+  }
+}
+
+@keyframes overlay-in {
+  from {
+    opacity: 0;
+    transform: scale(0.985);
+  }
+}
+
+.fileChip {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.65rem 0.5rem 0.65rem 0.75rem;
+  border-radius: 10px;
+  background: var(--ui-panel);
+  box-shadow: 0 0 0 1px var(--ui-border);
+}
+
+.fileChip[data-kind="text"] {
+  color: var(--teal-deep);
+}
+
+.fileText {
+  display: grid;
+  min-width: 0;
+}
+
+.fileName {
+  overflow: hidden;
+  color: var(--ink);
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fileMeta {
+  color: var(--muted);
+  font-size: var(--step-small);
+}
+
+.fileRemove {
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 8px;
+  color: var(--muted);
+  font-size: 1.4rem;
+  line-height: 1;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .fileRemove:hover {
+    background: var(--surface);
+    color: var(--ink);
+  }
+}
+
+.field[data-compact] {
+  min-height: 3.25rem;
+  font-size: var(--step-body);
+}
+
+.footStart {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 1rem;
+  min-width: 0;
+}
+
+.attach {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 2.5rem;
+  padding: 0 0.75rem;
+  border: 1px solid var(--ui-control);
+  border-radius: 8px;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  transition: background-color var(--t-hover) ease;
+}
+
+.attach:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .attach:not(:disabled):hover {
+    background: var(--surface);
+  }
+}
+
+.fileNote {
+  color: var(--teal-deep);
+  font-size: var(--step-small);
+}
+
+/* touch screens can't drag files in, so only the Attach button is offered there */
+@media (pointer: coarse) {
+  .footStart .hintKeys {
+    display: none;
+  }
 }
 
 .field {
@@ -783,6 +942,9 @@
   background: var(--teal-tint);
   color: var(--teal-deep);
 }
+.sourceIcon[data-type="pdf"] {
+  background: #fff1f0;
+}
 
 /* ---------- response ---------- */
 
@@ -1305,11 +1467,9 @@
     --app-bar: 3.5rem;
   }
 
-  /* no backdrop-filter here: it would make the bar the containing block of the fixed tab bar below */
+  /* no backdrop-filter on the bar: it would make the bar the containing block of the fixed tab bar below */
   .bar {
     grid-template-columns: 1fr auto;
-    background: var(--bg);
-    backdrop-filter: none;
   }
 
   /* the tabs move to a bar along the bottom, in reach of a thumb */
@@ -1322,11 +1482,9 @@
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 0;
-    padding: 0.35rem 0.5rem calc(0.35rem + env(safe-area-inset-bottom));
-    border-top: 1px solid var(--ui-border);
+    padding: 0.4rem 0.5rem calc(0.4rem + env(safe-area-inset-bottom));
     border-radius: 0;
-    background: rgb(255 255 255 / 0.96);
-    backdrop-filter: blur(12px);
+    background: var(--ink);
   }
 
   .tab {
@@ -1339,8 +1497,7 @@
   }
 
   .tab[aria-current="page"] {
-    box-shadow: none;
-    background: var(--surface);
+    background: var(--bg);
   }
 
   .main {
