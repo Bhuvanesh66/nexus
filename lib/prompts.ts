@@ -107,9 +107,9 @@ ${knowledge}
 
 Rules:
 1. Lean HEAVILY on the user's personal knowledge above. These are things they specifically chose to remember.
-2. When you use something from their personal knowledge, mark it inline like [#2] referring to the capture index.
+2. When you use a specific fact from their personal knowledge, mark it inline like [#2] referring to the capture index. Never cite a capture you did not use.
 3. Combine their personal knowledge with your general knowledge to produce the best possible output for the task.
-4. If their personal knowledge is irrelevant to the task, say so briefly and give a general-knowledge answer.
+4. If their personal knowledge is irrelevant to the task, give a general-knowledge answer without citing anything and without describing their notes (the app already tells them).
 5. Be specific, actionable. No fluff.
 6. If MODE is 'Draft Email', output only the email body (subject line on first line prefixed with 'Subject: '). If 'Make Outline', output a nested bullet outline. If 'Action Steps', output a numbered list of concrete steps. If 'Full Prep Brief', output sections: Context / What You Know / Suggested Approach / Risks / Opening Lines.
 7. Never invent facts and attribute them to the user's personal knowledge. Only cite [#n] for things that capture actually says.

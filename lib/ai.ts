@@ -37,6 +37,9 @@ const GEMINI_DEFAULTS: Record<GeminiSlot, string> = {
 const geminiModels: Partial<Record<GeminiSlot, string>> = {};
 const geminiNoThinkingConfig = new Set<string>();
 const geminiNoJsonMode = new Set<string>();
+const geminiBusyUntil = new Map<string, number>();
+const OWN_MODEL_MS = 20_000;
+const BUSY_MS = 5 * 60_000;
 
 export class AiError extends Error {
   constructor(
@@ -208,8 +211,8 @@ export function parseJson(text: string): unknown {
  * One Gemini call that heals itself: if the model isn't available to this key (404), it asks Google which
  * models are and takes the newest that fits the slot; if the model refuses the request (400, which Gemini
  * often reports without naming the field), it drops the thinking setting, then JSON mode; if the model is
- * overloaded or rate-limited (429, 500, 503), it hands this one call to the other Flash model. Lessons about
- * models and settings are kept for the life of the server instance.
+ * busy (429, 500, 503, or no answer within OWN_MODEL_MS), it hands the call to the other Flash model and keeps
+ * doing so for BUSY_MS. Lessons about models and settings are kept for the life of the server instance.
  */
 async function gemini(
   slot: GeminiSlot,
@@ -218,21 +221,42 @@ async function gemini(
   signal: AbortSignal,
 ) {
   const key = process.env.GEMINI_API_KEY as string;
+  const other: ModelTier = slot === "fast" ? "smart" : "fast";
+  const canStandIn = method === "generateContent";
   let model = geminiModels[slot] ?? GEMINI_DEFAULTS[slot];
   let standIn = false;
+  if (canStandIn && (geminiBusyUntil.get(model) ?? 0) > Date.now()) {
+    model = geminiModels[other] ?? GEMINI_DEFAULTS[other];
+    standIn = true;
+  }
+  const handOff = (why: string) => {
+    console.warn(`Gemini ${model} is busy (${why}); the ${other} model takes ${slot} calls for a while`);
+    geminiBusyUntil.set(model, Date.now() + BUSY_MS);
+    model = geminiModels[other] ?? GEMINI_DEFAULTS[other];
+    standIn = true;
+  };
+
   for (let attempt = 0; attempt < 5; attempt++) {
-    const res = await send(`${GEMINI_URL}/${model}:${method}`, { "x-goog-api-key": key }, body(model), signal);
+    // The slot's own model gets a shorter leash, so a stand-in still has time to answer.
+    const attemptSignal = canStandIn && !standIn ? AbortSignal.any([signal, AbortSignal.timeout(OWN_MODEL_MS)]) : signal;
+    let res: Response;
+    try {
+      res = await send(`${GEMINI_URL}/${model}:${method}`, { "x-goog-api-key": key }, body(model), attemptSignal);
+    } catch (error) {
+      if (canStandIn && !standIn && !signal.aborted) {
+        handOff("no answer in time");
+        continue;
+      }
+      throw error;
+    }
     if (res.ok) {
       if (!standIn && geminiModels[slot] !== model) console.info(`Gemini: ${model} answers for ${slot}`);
       if (!standIn) geminiModels[slot] = model;
       return res.json();
     }
     const detail = await res.text().catch(() => "");
-    if ([429, 500, 503].includes(res.status) && method === "generateContent" && !standIn) {
-      const other: ModelTier = slot === "fast" ? "smart" : "fast";
-      console.warn(`Gemini ${model} is busy (${res.status}); handing this call to the ${other} model`);
-      model = geminiModels[other] ?? GEMINI_DEFAULTS[other];
-      standIn = true;
+    if ([429, 500, 503].includes(res.status) && canStandIn && !standIn) {
+      handOff(String(res.status));
       continue;
     }
     if (res.status === 404) {
