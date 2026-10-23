@@ -60,10 +60,12 @@ afterwards, so `/stats` starts at zero. Email sign-up is switched off in Supabas
 ## Blockers (need the owner)
 
 1. ~~**Google sign-in**~~ — done (Oct 24): the Google provider is on in Supabase and a real Google account has signed in.
-2. **AI**: no `ANTHROPIC_API_KEY` / `OPENAI_API_KEY`, and Vercel AI Gateway refuses requests until the team has
-   a card on file. Until then drops get a labelled basic summary and Hand off can't write. Claude summaries,
-   Claude-confirmed connections, semantic retrieval and the five generated outputs are implemented but unverified
-   against a live model.
+2. ~~**AI**~~ — done (Oct 24) with Gemini (`GEMINI_API_KEY`, Production only on Vercel). Verified on production:
+   AI summaries for notes, an article and a 15-page PDF; model-confirmed connections; semantic retrieval with
+   gemini-embedding-001 (1536-d); all five modes (Full Prep Brief 4 s, Draft Email with a Subject line, Make Outline,
+   Action Steps, and an unrelated Answer that cites nothing and shows the empty-Vault line). Gemini Flash was often
+   overloaded or slow, so Flash-Lite writes everything and Flash stands in when Flash-Lite is busy (lib/ai.ts).
+   Fragments saved before the key was added keep their basic summary.
 
 3. **YouTube transcripts on Vercel**: YouTube refuses caption requests from Vercel's datacenter IPs (they work
    from a home connection). The paste-a-summary recovery covers it; a reliable fix is a transcript API or a
