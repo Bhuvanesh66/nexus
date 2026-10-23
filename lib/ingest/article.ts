@@ -1,5 +1,3 @@
-import { Readability } from "@mozilla/readability";
-import { JSDOM, VirtualConsole } from "jsdom";
 import { decodeEntities } from "./detect";
 
 export type FetchFailure = { ok: false; reason: "blocked" | "unsupported" };
@@ -12,8 +10,9 @@ const HEADERS = {
   "accept-language": "en-US,en;q=0.9",
 };
 const MAX_BYTES = 3_000_000;
+const BLOCK_END = /<(br|\/p|\/h[1-6]|\/li|\/div|\/blockquote|\/tr)\b[^>]*>/gi;
 
-/** The readable text of an article (Mozilla Readability), or why it could not be read. */
+/** The readable text of an article (Mozilla Readability over linkedom), or why it could not be read. */
 export async function fetchArticle(url: string): Promise<Fetched | FetchFailure> {
   let res: Response;
   try {
@@ -34,7 +33,7 @@ export async function fetchArticle(url: string): Promise<Fetched | FetchFailure>
     return text.length > 80 ? { ok: true, title: new URL(url).hostname, text, site: null } : { ok: false, reason: "blocked" };
   }
 
-  // Scripts and styles are dropped before parsing: Readability does not need them and jsdom is faster without.
+  // Scripts and styles are dropped before parsing: Readability does not need them and parsing is faster without.
   const html = body.replace(/<script\b[\s\S]*?<\/script>/gi, "").replace(/<style\b[\s\S]*?<\/style>/gi, "");
   const meta = (name: string) =>
     html.match(new RegExp(`<meta[^>]+(?:property|name)=["']${name}["'][^>]*content=["']([^"']*)["']`, "i"))?.[1] ??
@@ -44,22 +43,19 @@ export async function fetchArticle(url: string): Promise<Fetched | FetchFailure>
   let text = "";
   let site = meta("og:site_name") ?? null;
   try {
-    const dom = new JSDOM(html, { url, virtualConsole: new VirtualConsole() });
-    const article = new Readability(dom.window.document).parse();
+    // Loaded on demand, so a parser problem can only ever affect links, never notes.
+    const [{ Readability }, { parseHTML }] = await Promise.all([import("@mozilla/readability"), import("linkedom")]);
+    const { document } = parseHTML(html);
+    const article = new Readability(document as unknown as Document).parse();
     if (article) {
       // From the cleaned HTML rather than textContent, so paragraphs and headings keep their breaks.
-      text = decodeEntities(
-        (article.content ?? "")
-          .replace(/<(br|\/p|\/h[1-6]|\/li|\/div|\/blockquote|\/tr)\b[^>]*>/gi, "\n")
-          .replace(/<[^>]+>/g, ""),
-      )
+      text = decodeEntities((article.content ?? "").replace(BLOCK_END, "\n").replace(/<[^>]+>/g, ""))
         .replace(/[ \t]+/g, " ")
         .replace(/\n\s*\n+/g, "\n\n")
         .trim();
       title = article.title?.trim() || title;
       site = article.siteName ?? site;
     }
-    dom.window.close();
   } catch {
     // fall through to the meta description
   }
