@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 
 import { ArrowIcon } from "@/components/icons";
 import { DEFAULT_MODE, MODES, type Mode } from "@/lib/prompts";
 import { EMPTY_VAULT_LINE, type AskRecord, type AskSource } from "@/lib/vault";
+import { ActionCards, ActionLog } from "./ActionCards";
 import styles from "./app.module.css";
 import { gmailUrl, Markdown, plainText } from "./Markdown";
 import { api, Stages, useSlow, useStage } from "./shared";
@@ -20,6 +21,8 @@ export function AskPanel({ onOpen, vaultSize }: { onOpen: (id: string) => void; 
   const [current, setCurrent] = useState<AskRecord | null>(null);
   const [failure, setFailure] = useState<Failure | null>(null);
   const [history, setHistory] = useState<AskRecord[] | null>(null);
+  const [logVersion, setLogVersion] = useState(0);
+  const bumpLog = () => setLogVersion((v) => v + 1);
   const abort = useRef<AbortController | null>(null);
   const stage = useStage(running, [0, 2500, 6000]);
   const slow = useSlow(running, 15_000);
@@ -160,7 +163,7 @@ export function AskPanel({ onOpen, vaultSize }: { onOpen: (id: string) => void; 
             </div>
           ) : null}
 
-          {current && !running ? <ResponseCard ask={current} onOpen={onOpen} fresh /> : null}
+          {current && !running ? <ResponseCard ask={current} onOpen={onOpen} onActionsChanged={bumpLog} fresh /> : null}
         </div>
       </section>
 
@@ -187,13 +190,15 @@ export function AskPanel({ onOpen, vaultSize }: { onOpen: (id: string) => void; 
                       {a.sources.length ? `${a.sources.length} fragments used` : "general knowledge"}
                     </span>
                   </summary>
-                  <ResponseCard ask={a} onOpen={onOpen} />
+                  <ResponseCard ask={a} onOpen={onOpen} onActionsChanged={bumpLog} />
                 </details>
               </li>
             ))}
           </ul>
         )}
       </section>
+
+      <ActionLog version={logVersion} />
     </div>
   );
 }
@@ -218,7 +223,17 @@ function useCountUp(target: number, run: boolean) {
   return value;
 }
 
-function ResponseCard({ ask, onOpen, fresh = false }: { ask: AskRecord; onOpen: (id: string) => void; fresh?: boolean }) {
+function ResponseCard({
+  ask,
+  onOpen,
+  onActionsChanged,
+  fresh = false,
+}: {
+  ask: AskRecord;
+  onOpen: (id: string) => void;
+  onActionsChanged: () => void;
+  fresh?: boolean;
+}) {
   const [copied, setCopied] = useState(false);
   const used = useCountUp(ask.sources.length, fresh);
   const prefix = `src-${ask.id.slice(0, 8)}`;
@@ -272,6 +287,8 @@ function ResponseCard({ ask, onOpen, fresh = false }: { ask: AskRecord; onOpen: 
         </button>
         {isEmail ? <span className={styles.small}>Opens a draft in Gmail. Nothing is sent until you press Send.</span> : null}
       </div>
+
+      <ActionCards askId={ask.id} auto={fresh} onChanged={onActionsChanged} />
 
       {ask.sources.length ? (
         <details className={styles.sources}>
