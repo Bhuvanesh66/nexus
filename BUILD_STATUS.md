@@ -92,6 +92,25 @@ afterwards, so `/stats` starts at zero. Email sign-up is switched off in Supabas
   - Groq (`GROQ_API_KEY`, Production): voice notes are transcribed by Whisper first (verified in the logs:
     "transcribed audio with groq", 8 s); Groq also backs Gemini up for videos up to 25 MB.
 
+- Execution layer (Oct 25), with Composio, not OpenClaw:
+  - After a hand-off Nexus proposes up to three actions: send an email, save a Gmail draft, or add a Google
+    Calendar event. Draft Email turns the drafted email into one card, filling in the recipient from the
+    fragments the hand-off used; other modes ask the model, which must not invent addresses.
+  - Each card shows exactly what will happen and can be edited. Nothing runs until the user approves that
+    card. The approval is recorded before acting, the outcome lands in "Done by Nexus", the `actions` table
+    keeps every row (RLS, no delete policy), and each user is limited to 40 actions a day.
+  - With `COMPOSIO_API_KEY`, the user connects their own Gmail or Calendar once in a popup through Composio's
+    verified Google app; Nexus then runs the approved tool (`GMAIL_SEND_EMAIL`, `GMAIL_CREATE_EMAIL_DRAFT`,
+    `GOOGLECALENDAR_CREATE_EVENT`) via Composio's REST API v3.1. Without the key, cards open Gmail or Google
+    Calendar filled in instead.
+  - Verified on production without the key:
+    - Proposals for Draft Email and Action Steps (the email to kavya@… and "Deadline: … 20 Nov 10:00" event).
+    - The same proposals come back for the same hand-off.
+    - Bad or missing addresses are refused, dismiss works, and dismissed actions appear in the log.
+    - Approve answers "can't act in your apps on this deployment yet".
+  - Not yet verified: the Composio connect and send path, which needs the key and a real Google account.
+  - Migration `20261025090000_actions.sql`.
+
 ## Not built (spec §9 roadmap)
 WhatsApp, Instagram link transcription (needs a separate worker or a paid API), Chrome extension, OCR,
 multi-step execution, reminders.
