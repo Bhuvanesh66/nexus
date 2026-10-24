@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "Nexus — Second Brain"
+description = "Nexus is a personal second brain for capturing links, notes and files, organizing knowledge, and asking questions with answers grounded in saved sources."
+version = "1.0.0"
+id = "artifacts/second-brain"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 20447
+
+[services.development]
+run = "pnpm --filter @workspace/second-brain run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/second-brain", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/second-brain/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "20447"
+BASE_PATH = "/"

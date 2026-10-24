@@ -1,0 +1,46 @@
+.main {
+  display: grid;
+  justify-items: start;
+  align-content: center;
+  gap: 1.5rem;
+  min-height: calc(100svh - 4rem);
+  padding: 2rem var(--margin) 6rem;
+}
+
+.title {
+  max-width: 16ch;
+  font-size: var(--step-head);
+  font-weight: 700;
+  line-height: 1.06;
+  letter-spacing: -0.03em;
+}
+
+.text {
+  max-width: 44ch;
+  font-size: var(--step-lead);
+  line-height: 1.4;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.google {
+  padding: 2px;
+  border-radius: 4px;
+  background: #fff;
+  box-sizing: content-box;
+}
+
+.secondary {
+  display: inline-flex;
+  align-items: center;
+  min-height: 3.25rem;
+  padding: 0 1.25rem;
+  border: 1px solid var(--ui-control);
+  border-radius: var(--radius);
+  font-weight: 600;
+  text-decoration: none;
+}

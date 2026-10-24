@@ -1,0 +1,1 @@
+- [Migration runtime compatibility](migration-runtime-compatibility.md) — matching React types is not enough when imported components use newer runtime hooks.

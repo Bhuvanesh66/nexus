@@ -1,0 +1,211 @@
+/* The close is the last two rows of a board of filled tiles, every cell used and each in a colour of the
+   spectrum. The accent tile carries the closing line and the last primary action. */
+.footer {
+  padding: var(--section) var(--margin) var(--margin);
+}
+
+.board {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  grid-template-areas:
+    "scope scope scope scope scope nav nav nav event event event event"
+    "mark mark mark mark mark mark cta cta cta cta cta cta";
+  grid-template-rows: minmax(13.75rem, auto) minmax(22rem, auto);
+  gap: 8px;
+}
+
+.tile {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 1.5rem;
+  min-width: 0;
+  padding: 20px;
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.scope {
+  grid-area: scope;
+  background: var(--teal-tint);
+}
+
+.nav {
+  grid-area: nav;
+  justify-content: flex-start;
+  background: var(--sky-tint);
+}
+
+.event {
+  grid-area: event;
+  justify-content: flex-end;
+  background: var(--violet-tint);
+}
+
+.mark {
+  grid-area: mark;
+  align-items: center;
+  justify-content: center;
+  overflow: clip;
+  background: var(--ink);
+  color: var(--bg);
+}
+
+.cta {
+  grid-area: cta;
+  padding: 24px;
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+.scopeText {
+  max-width: 24ch;
+  font-family: var(--font-display);
+  font-size: var(--step-lead);
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+}
+
+.small {
+  color: var(--muted);
+  font-size: var(--step-small);
+  line-height: 1.45;
+}
+
+.eventText {
+  max-width: 30ch;
+  font-size: var(--step-body);
+  line-height: 1.45;
+}
+
+.navList {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.navList a {
+  display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-decoration-thickness: 0.07em;
+  text-underline-offset: 0.25em;
+  transition: text-decoration-color var(--t-hover) ease;
+}
+
+.wordmark {
+  font-family: var(--font-display);
+  font-size: clamp(5rem, 15vw, 14rem);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.06em;
+  white-space: nowrap;
+}
+
+.letter:nth-child(1) {
+  color: var(--teal-bright);
+}
+
+.letter:nth-child(2) {
+  color: var(--cyan-bright);
+}
+
+.letter:nth-child(3) {
+  color: var(--sky);
+}
+
+.letter:nth-child(4) {
+  color: var(--indigo-bright);
+}
+
+.letter:nth-child(5) {
+  color: var(--violet-bright);
+}
+
+.ctaHeading {
+  max-width: 20ch;
+  font-size: var(--step-head);
+  font-weight: 700;
+  line-height: 1.06;
+  letter-spacing: -0.03em;
+}
+
+/* the page's one button, inverted to stand on the accent */
+.ctaButton {
+  display: inline-flex;
+  align-self: flex-start;
+  align-items: center;
+  gap: 0.6rem;
+  min-height: 3.25rem;
+  padding: 0 1.4rem;
+  border-radius: var(--radius);
+  background: var(--bg);
+  color: var(--accent-text);
+  font-size: var(--step-body);
+  font-weight: 600;
+  line-height: 1.2;
+  text-decoration: none;
+  white-space: nowrap;
+  transition:
+    transform var(--t-press) var(--ease-out),
+    background-color var(--t-hover) ease;
+}
+
+.ctaButton:active {
+  transform: scale(0.97);
+}
+
+.ctaButton:focus-visible {
+  outline-color: var(--bg);
+  outline-offset: 3px;
+}
+
+.arrow {
+  flex: none;
+  transition: transform var(--t-ui) var(--ease-out);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .navList a:hover {
+    text-decoration-color: currentColor;
+  }
+
+  .ctaButton:hover {
+    background: var(--accent-tint);
+  }
+}
+
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .ctaButton:hover .arrow {
+    transform: translateX(3px);
+  }
+}
+
+@media (max-width: 899px) {
+  .board {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-areas:
+      "mark mark"
+      "cta cta"
+      "nav event"
+      "scope scope";
+    grid-template-rows: 10rem minmax(15rem, auto) auto auto;
+    gap: 6px;
+  }
+
+  .wordmark {
+    font-size: clamp(4rem, 26vw, 9rem);
+  }
+
+  .cta {
+    padding: 20px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ctaButton:active {
+    transform: none;
+  }
+}

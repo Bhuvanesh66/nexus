@@ -1,0 +1,88 @@
+/* Full-width stripes of colour, straight after the ink of Why now: the drop, then the three layers of Nexus,
+   each a shade deeper (memory, learning, execution). Each line is set at display size on the left; its label
+   and what it does sit at the right, on the line's last baseline. */
+.tagline {
+  display: grid;
+}
+
+.stripe {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  column-gap: var(--gutter);
+  align-items: end;
+  padding: clamp(2.5rem, 5vw, 4.5rem) var(--margin);
+  color: var(--ink);
+}
+
+.stripe[data-tone="teal"] {
+  background: var(--teal);
+}
+
+.stripe[data-tone="sky"] {
+  background: var(--sky);
+}
+
+.stripe[data-tone="blue"] {
+  background: var(--blue);
+}
+
+.stripe[data-tone="indigo"] {
+  background: var(--indigo);
+  color: var(--accent-ink);
+}
+
+.line {
+  grid-column: 1 / 10;
+  font-size: min(7.2vw, 7.5rem);
+  font-weight: 700;
+  line-height: 0.95;
+  letter-spacing: -0.05em;
+  text-wrap: balance;
+}
+
+.note {
+  grid-column: 10 / -1;
+  display: grid;
+  gap: 0.35rem;
+  padding-bottom: 0.4rem;
+  font-size: var(--step-body);
+  line-height: 1.45;
+}
+
+.label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+}
+
+.glyph {
+  flex: none;
+}
+
+/* the sentence that marks the difference: where other tools stop, and what that makes Nexus */
+.turn {
+  font-weight: 700;
+}
+
+@media (max-width: 899px) {
+  .line,
+  .note {
+    grid-column: 1 / -1;
+  }
+
+  /* stacked, each stripe gets more air, so a stripe's last line never reads as a label for the next heading */
+  .stripe {
+    padding-block: clamp(3rem, 8vw, 4.5rem);
+  }
+
+  .line {
+    font-size: clamp(3rem, 1rem + 10vw, 6rem);
+  }
+
+  .note {
+    max-width: 30ch;
+    margin-top: 1.25rem;
+    padding-bottom: 0;
+  }
+}

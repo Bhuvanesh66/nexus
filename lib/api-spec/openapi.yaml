@@ -11,6 +11,220 @@ tags:
   - name: health
     description: Health operations
 paths:
+  /session:
+    get:
+      operationId: getNexusSession
+      summary: Verified current user and service availability
+      responses:
+        "200":
+          description: Session state
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/NexusSession" }
+  /config:
+    get:
+      operationId: getNexusConfig
+      summary: Public Supabase upload configuration (never a service-role key)
+      responses:
+        "200":
+          description: Public configuration
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [supabaseKey]
+                properties:
+                  supabaseKey: { type: string }
+  /stats:
+    get:
+      operationId: getNexusStats
+      summary: Anonymous aggregate counts, no user content
+      responses:
+        "200":
+          description: Live counts or unavailable
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [stats]
+                properties:
+                  stats:
+                    type: [object, "null"]
+                    required: [users, captures, asks]
+                    properties:
+                      users: { type: integer }
+                      captures: { type: integer }
+                      asks: { type: integer }
+  /captures:
+    get:
+      operationId: listNexusCaptures
+      summary: Current user's fragments, newest first
+      responses:
+        "200":
+          description: Vault summaries
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  captures:
+                    type: array
+                    items: { $ref: "#/components/schemas/CaptureSummary" }
+        "401": { $ref: "#/components/responses/SignedOut" }
+  /captures/{id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      operationId: getNexusCapture
+      summary: Fragment details, connections and private media playback link
+      responses:
+        "200":
+          description: Capture detail
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  capture: { $ref: "#/components/schemas/CaptureSummary" }
+        "401": { $ref: "#/components/responses/SignedOut" }
+        "404": { $ref: "#/components/responses/NexusError" }
+    delete:
+      operationId: deleteNexusCapture
+      summary: Delete fragment, its links and uploaded media
+      responses:
+        "204": { description: Deleted }
+        "401": { $ref: "#/components/responses/SignedOut" }
+        "404": { $ref: "#/components/responses/NexusError" }
+  /capture:
+    post:
+      operationId: createNexusCapture
+      summary: Ingest a note, URL, extracted document or previously uploaded media
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CaptureInput" }
+      responses:
+        "200":
+          description: Saved fragment, connections and notices
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  capture: { $ref: "#/components/schemas/CaptureSummary" }
+                  connections:
+                    type: array
+                    items: { $ref: "#/components/schemas/NexusConnection" }
+                  notices: { type: array, items: { type: string } }
+        "401": { $ref: "#/components/responses/SignedOut" }
+        "400": { $ref: "#/components/responses/NexusError" }
+  /ask:
+    get:
+      operationId: listNexusAsks
+      summary: Current user's hand-off history
+      responses:
+        "200":
+          description: Hand-off history
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  asks: { type: array, items: { $ref: "#/components/schemas/AskRecord" } }
+        "401": { $ref: "#/components/responses/SignedOut" }
+    post:
+      operationId: createNexusAsk
+      summary: Complete a task grounded in the user's Vault
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AskInput" }
+      responses:
+        "200":
+          description: Answer with cited sources
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ask: { $ref: "#/components/schemas/AskRecord" }
+                  checked: { type: integer }
+        "401": { $ref: "#/components/responses/SignedOut" }
+        "400": { $ref: "#/components/responses/NexusError" }
+        "503": { $ref: "#/components/responses/NexusError" }
+  /uploads:
+    post:
+      operationId: prepareNexusUpload
+      summary: Create a signed upload URL for private audio/video up to 50 MB
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/MediaUploadInput" }
+      responses:
+        "200":
+          description: Signed upload destination
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  path: { type: string }
+                  url: { type: string }
+        "401": { $ref: "#/components/responses/SignedOut" }
+  /connections:
+    get:
+      operationId: getNexusConnections
+      summary: Current user's Gmail and Google Calendar connection state
+      responses:
+        "200": { $ref: "#/components/responses/NexusObject" }
+        "401": { $ref: "#/components/responses/SignedOut" }
+    post:
+      operationId: connectNexusApp
+      summary: Start Composio authorization for a toolkit
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ToolkitInput" }
+      responses:
+        "200": { $ref: "#/components/responses/NexusObject" }
+        "401": { $ref: "#/components/responses/SignedOut" }
+  /actions:
+    get:
+      operationId: listNexusActions
+      summary: Current user's proposed and handled actions
+      responses:
+        "200": { $ref: "#/components/responses/NexusObject" }
+        "401": { $ref: "#/components/responses/SignedOut" }
+    post:
+      operationId: proposeNexusActions
+      summary: Generate action proposals from a saved hand-off
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ActionProposalInput" }
+      responses:
+        "200": { $ref: "#/components/responses/NexusObject" }
+        "401": { $ref: "#/components/responses/SignedOut" }
+  /actions/{id}:
+    post:
+      operationId: decideNexusAction
+      summary: Approve, execute or dismiss an action, preserving confirmation safeguards
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ActionDecisionInput" }
+      responses:
+        "200": { $ref: "#/components/responses/NexusObject" }
+        "401": { $ref: "#/components/responses/SignedOut" }
+        "409": { $ref: "#/components/responses/NexusError" }
   /healthz:
     get:
       operationId: healthCheck
@@ -25,7 +239,135 @@ paths:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
 components:
+  responses:
+    SignedOut:
+      description: No verified Supabase session
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/NexusApiError" }
+    NexusError:
+      description: User-facing error
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/NexusApiError" }
+    NexusObject:
+      description: Existing Nexus response; detailed action shapes are preserved in nexus/lib/actions.ts
+      content:
+        application/json:
+          schema: { type: object, additionalProperties: true }
   schemas:
+    NexusApiError:
+      type: object
+      required: [code, message]
+      properties:
+        code: { type: string }
+        message: { type: string }
+      additionalProperties: true
+    NexusSession:
+      type: object
+      required: [user, aiReady, configured, googleEnabled]
+      properties:
+        user:
+          type: [object, "null"]
+          required: [name, email, avatar]
+          properties:
+            name: { type: string }
+            email: { type: string }
+            avatar: { type: [string, "null"] }
+        aiReady: { type: boolean }
+        configured: { type: boolean }
+        googleEnabled: { type: boolean }
+    CaptureSummary:
+      type: object
+      required: [id, type, title, summary, one_line_takeaway, keywords, created_at, summary_source, connection_count, source_url]
+      properties:
+        id: { type: string }
+        type: { type: string, enum: [youtube, url, text, tweet, pdf, video, audio] }
+        source_url: { type: [string, "null"] }
+        title: { type: string }
+        summary: { type: string }
+        one_line_takeaway: { type: string }
+        keywords: { type: array, items: { type: string } }
+        created_at: { type: string }
+        summary_source: { type: string, enum: [ai, basic] }
+        connection_count: { type: integer }
+      additionalProperties: true
+    NexusConnection:
+      type: object
+      properties:
+        id: { type: string }
+        title: { type: string }
+        type: { type: string }
+        reason: { type: [string, "null"] }
+    CaptureInput:
+      type: object
+      properties:
+        input: { type: string, maxLength: 10000 }
+        pasted: { type: string, maxLength: 10000 }
+        force: { type: boolean }
+        document:
+          type: object
+          required: [name, kind, text]
+          properties:
+            name: { type: string }
+            kind: { type: string, enum: [pdf, text] }
+            text: { type: string }
+        media:
+          type: object
+          required: [path, mime, name]
+          properties:
+            path: { type: string }
+            mime: { type: string }
+            name: { type: string }
+    AskInput:
+      type: object
+      required: [task, mode]
+      properties:
+        task: { type: string, minLength: 1, maxLength: 2000 }
+        mode: { type: string }
+    AskRecord:
+      type: object
+      required: [id, task, mode, response, sources, general_only, created_at]
+      properties:
+        id: { type: string }
+        task: { type: string }
+        mode: { type: string }
+        response: { type: string }
+        sources: { type: array, items: { $ref: "#/components/schemas/AskSource" } }
+        general_only: { type: boolean }
+        created_at: { type: string }
+    AskSource:
+      type: object
+      properties:
+        n: { type: integer }
+        id: { type: string }
+        title: { type: string }
+        type: { type: string }
+        source_url: { type: [string, "null"] }
+    MediaUploadInput:
+      type: object
+      required: [name, type, size]
+      properties:
+        name: { type: string }
+        type: { type: string }
+        size: { type: integer, minimum: 1, maximum: 52428800 }
+    ToolkitInput:
+      type: object
+      required: [toolkit]
+      properties:
+        toolkit: { type: string, enum: [gmail, googlecalendar] }
+    ActionProposalInput:
+      type: object
+      required: [askId]
+      properties:
+        askId: { type: string, format: uuid }
+        timezone: { type: string }
+    ActionDecisionInput:
+      type: object
+      properties:
+        decision: { type: string }
+        kind: { type: string }
+        payload: { type: object, additionalProperties: true }
     HealthStatus:
       type: object
       properties:

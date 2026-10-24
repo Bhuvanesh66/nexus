@@ -1,45 +1,46 @@
-# [Project name]
+# Nexus — Beyond memory
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+Nexus captures notes, links and files into a private Vault, connects related fragments, and grounds task answers in those sources.
 
 ## Run & Operate
 
-- `pnpm --filter @workspace/api-server run dev` — run the API server (port 5000)
-- `pnpm run typecheck` — full typecheck across all packages
-- `pnpm run build` — typecheck + build all packages
-- `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
-- `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
-- Required env: `DATABASE_URL` — Postgres connection string
+- Frontend workflow: `artifacts/second-brain: web`
+- Backend workflow: `artifacts/api-server: API Server`
+- Start/restart the managed workflows; they supply `PORT` and `BASE_PATH`. Do not run a root `pnpm dev`.
+- `pnpm run typecheck` checks all workspace packages.
+- `pnpm --filter @workspace/api-server run test:security` verifies URL ingestion's redirect, DNS rebinding and private-address protection.
+- `pnpm --filter @workspace/second-brain run test:e2e` runs the imported desktop, phone and reduced-motion checks against the running shared proxy.
+- Browser testing uses the Nix `chromium` package declared in `.replit`. Elsewhere, install Playwright Chromium with `pnpm --filter @workspace/second-brain run test:e2e:install`.
 
-## Stack
+## Stack and layout
 
-- pnpm workspaces, Node.js 24, TypeScript 5.9
-- API: Express 5
-- DB: PostgreSQL + Drizzle ORM
-- Validation: Zod (`zod/v4`), `drizzle-zod`
-- API codegen: Orval (from OpenAPI spec)
-- Build: esbuild (CJS bundle)
+- React + Vite frontend in `artifacts/second-brain/`, served at `/`.
+- Express backend in `artifacts/api-server/`, serving `/api` and `/auth`.
+- Original business logic and Fetch API handlers live in `artifacts/api-server/src/nexus/`; Express binds each request to its own Supabase cookies.
+- OpenAPI contract: `lib/api-spec/openapi.yaml`. Regenerate clients with `pnpm --filter @workspace/api-spec run codegen`.
+- Supabase remains the existing database, Google authentication provider and private media store. Do not replace it with the unused scaffold database or migrate existing data as part of routine work.
+- Original source and SQL migrations remain in `.migration-backup/` for reference; this directory is excluded from deployment.
 
-## Where things live
+## Configuration
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+No provider credentials were included in the import. The public landing page and interactive sample-data demo work without them. Sign-in explicitly explains the missing connection; authenticated endpoints reject signed-out requests.
 
-## Architecture decisions
+Add these through Replit Secrets, never in source files:
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+- `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` for the **existing** Supabase project. The original `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` names are also accepted server-side.
+- Enable Google in Supabase Auth and allow this app's `/auth/callback` URL. Keep production and preview callback URLs separately configured.
+- `GEMINI_API_KEY` for the original text, 1536-dimensional embeddings and transcription setup.
+- Optional alternatives: `ANTHROPIC_API_KEY` for text; `OPENAI_API_KEY` for text and embeddings; `GROQ_API_KEY` for transcription.
+- Optional `COMPOSIO_API_KEY` for user-approved Gmail/Calendar actions; `SUPADATA_API_KEY` for additional transcript/reel support.
 
-## Product
+Vercel's AI Gateway and deployment OIDC token are not used. Direct provider calls replace that platform-specific fallback. Do not switch an existing Vault's embedding model casually: vectors produced by different models cannot be compared.
 
-_Describe the high-level user-facing capabilities of this app once they exist._
+All server-side link ingestion uses a public-only network transport: each redirect is validated and socket DNS lookup rejects private, metadata, reserved and IPv4-mapped/translation addresses. Keep that transport on article, social oEmbed and YouTube transcript fetches; never replace it with unrestricted `fetch`. Provider credentials must not follow cross-origin redirects.
 
-## User preferences
+The browser obtains only the public Supabase upload key from `/api/config`. Never expose a service-role key. Retain Supabase row-level security and existing per-user storage rules.
 
-_Populate as you build — explicit user instructions worth remembering across sessions._
+## Verification limits
 
-## Gotchas
+The imported end-to-end suite covers the landing page, interactive demo, signed-out redirects and public stats. Real Google login, private Vault CRUD, media storage, AI calls and connected-app execution require the original service configuration and cannot be verified until it is supplied.
 
-_Populate as you build — sharp edges, "always run X before Y" rules._
-
-## Pointers
-
-- See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details
+The phone demo pause check fails when clicking causes an automatic scroll/pause/resume transition. The identical test was run against the original Vercel site and fails there too; it is an inherited issue, not a port regression. Keep it visible rather than hiding or weakening the test.

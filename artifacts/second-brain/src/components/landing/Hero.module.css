@@ -1,0 +1,235 @@
+/* Hero: a two-word headline in the upper left, the working product filling the rest of the first screen. */
+.hero {
+  display: grid;
+  gap: clamp(2.5rem, 7vw, 3.5rem);
+  padding: clamp(1rem, 3vh, 2.25rem) var(--margin) 0;
+}
+
+@media (min-width: 1080px) {
+  .hero {
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    column-gap: clamp(2.5rem, 4vw, 4.5rem);
+    align-items: stretch;
+  }
+}
+
+/* the copy runs top-down: the sources panel follows the actions, so no gap opens under them at any width */
+.copy {
+  display: flex;
+  flex-direction: column;
+  gap: 2.5rem;
+  min-width: 0;
+}
+
+/* two short words, so the headline can be set as large as the copy column allows */
+.title {
+  margin-left: -0.055em;
+  font-size: clamp(4.25rem, 1rem + 17vw, 7rem);
+  font-weight: 700;
+  line-height: 0.92;
+  letter-spacing: -0.05em;
+}
+
+@media (min-width: 1080px) {
+  .title {
+    font-size: min(8.4vw, 8.75rem);
+  }
+}
+
+/* each authored line rises from behind its own baseline; the padding keeps the descender of "y" unclipped */
+.line {
+  display: block;
+  overflow: hidden;
+  padding-bottom: 0.14em;
+  margin-bottom: -0.14em;
+}
+
+.line > span {
+  display: block;
+}
+
+/* the word the page is about, in the first colour of the spectrum and the logo (3.7:1, for type this large) */
+.tone {
+  color: var(--teal-strong);
+}
+
+.lead {
+  max-width: 30ch;
+  margin-top: clamp(1.5rem, 2.8vw, 2rem);
+  font-size: var(--step-lead);
+  line-height: 1.4;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1.5rem;
+  margin-top: clamp(1.75rem, 3vw, 2.25rem);
+}
+
+.watch {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+  min-height: 3.25rem;
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-decoration-thickness: 0.07em;
+  text-underline-offset: 0.25em;
+  transition: text-decoration-color var(--t-hover) ease;
+}
+
+.watchIcon {
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 999px;
+  background: var(--teal-tint);
+  transition:
+    background-color var(--t-hover) ease,
+    transform var(--t-press) var(--ease-out);
+}
+
+.watchIcon svg {
+  margin-left: 2px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .watch:hover {
+    text-decoration-color: currentColor;
+  }
+
+  .watch:hover .watchIcon {
+    background: var(--teal);
+  }
+}
+
+.watch:active .watchIcon {
+  transform: scale(0.92);
+}
+
+.trust {
+  margin-top: 0.9rem;
+  color: var(--muted);
+  font-size: var(--step-small);
+}
+
+.foot {
+  display: grid;
+  gap: 1rem;
+}
+
+.note {
+  max-width: 38ch;
+  font-size: var(--step-body);
+  line-height: 1.45;
+}
+
+/* what you can drop: one panel of the app's sources, split by hairlines, each row led by its brand's mark */
+[data-ui].drops {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  overflow: hidden;
+  border: 1px solid var(--ui-border);
+  border-radius: 12px;
+  background: var(--ui-border);
+}
+
+[data-ui] .drop {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  align-items: center;
+  column-gap: 14px;
+  min-height: 84px;
+  padding: 12px 16px;
+  background: var(--bg);
+}
+
+@media (max-width: 599px) {
+  [data-ui].drops {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  [data-ui] .drop {
+    min-height: 60px;
+    padding: 10px 14px;
+  }
+}
+
+[data-ui] .drop > svg {
+  flex: none;
+}
+
+[data-ui] .dropText {
+  display: grid;
+  min-width: 0;
+}
+
+[data-ui] .dropName {
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 20px;
+}
+
+[data-ui] .dropExample {
+  overflow: hidden;
+  color: var(--ui-faint);
+  font-size: 13px;
+  line-height: 18px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* the working product stands on one flat field of lavender */
+.demo {
+  align-self: start;
+  min-width: 0;
+  padding: clamp(14px, 1.5vw, 22px);
+  border-radius: 20px;
+  background: var(--violet-tint);
+}
+
+/* on a phone the field runs to both edges, so the product keeps the full width */
+@media (max-width: 599px) {
+  .demo {
+    margin-inline: calc(var(--margin) * -1);
+    padding: 18px var(--margin) 20px;
+    border-radius: 0;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .line > span {
+    animation: line-up 820ms var(--ease-expo) both;
+    animation-delay: calc(100ms + var(--i, 0) * 110ms);
+  }
+
+  .load {
+    animation: load-rise 560ms var(--ease-out) both;
+    animation-delay: var(--delay, 420ms);
+  }
+}
+
+@keyframes line-up {
+  from {
+    transform: translateY(105%);
+  }
+  to {
+    transform: none;
+  }
+}
+
+@keyframes load-rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
