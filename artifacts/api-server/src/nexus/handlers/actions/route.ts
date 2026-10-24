@@ -1,4 +1,5 @@
 import { checkPayload, type ActionKind, type ActionPayload, type ActionRecord } from "@/lib/actions";
+import { agentCogConfigured, agentCogDraft } from "@/lib/agenticorg";
 import { aiConfigured, complete, parseJson, withRetry } from "@/lib/ai";
 import { fail, isUuid, SIGNED_OUT } from "@/lib/http";
 import { logger } from "@/lib/logger";
@@ -86,6 +87,22 @@ export async function POST(request: Request) {
     .maybeSingle();
   if (!ask?.response) return fail(404, "bad-ask", "That hand-off isn’t in your history.");
 
+  let draftResponse: string = ask.response;
+  if (agentCogConfigured()) {
+    try {
+      const { output } = await agentCogDraft(ask.task, { response: stripMarkup(ask.response) });
+      const draft =
+        typeof output === "string"
+          ? output
+          : output !== null && typeof output === "object"
+            ? JSON.stringify(output)
+            : undefined;
+      if (typeof draft === "string" && draft.trim()) draftResponse = draft;
+    } catch {
+      // Drafting is optional: silently keep the original hand-off on any failure.
+    }
+  }
+
   const proposals: Proposal[] = [];
   if (ask.mode === "Draft Email") {
     const used = (ask.used_capture_ids as string[] | null) ?? [];
@@ -93,7 +110,7 @@ export async function POST(request: Request) {
       ? await supabase.from("captures").select("raw_content, summary").in("id", used)
       : { data: [] };
     const fragments = (sources ?? []).map((s) => `${s.summary}\n${s.raw_content}`).join("\n");
-    proposals.push(emailFromDraft(ask.task, ask.response, fragments));
+    proposals.push(emailFromDraft(ask.task, draftResponse, fragments));
   } else if (aiConfigured()) {
     const today = new Date().toLocaleDateString("en-GB", {
       timeZone: timezone,
@@ -105,7 +122,7 @@ export async function POST(request: Request) {
     try {
       const reply = await withRetry(() =>
         complete({
-          prompt: actionsPrompt({ task: ask.task, response: stripMarkup(ask.response), today, timezone }),
+          prompt: actionsPrompt({ task: ask.task, response: stripMarkup(draftResponse), today, timezone }),
           tier: "fast",
           maxTokens: 1800,
           json: true,
