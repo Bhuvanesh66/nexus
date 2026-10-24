@@ -17,13 +17,28 @@ const stripMarkup = (text: string) =>
     .replace(/\*\*([^*]+)\*\*/g, "$1")
     .trim();
 
+const ADDRESS = /[^\s@<>(),;:"']+@[^\s@<>(),;:"']+\.[a-z]{2,}/gi;
+
+/**
+ * Who the email is for: an address in the task or the draft, or else in the fragments the hand-off used,
+ * preferring one whose name part appears in the task ("Email Kavya…" → kavya@…). Empty when unsure.
+ */
+function recipient(task: string, response: string, fragments: string) {
+  const direct = `${task}\n${response}`.match(ADDRESS);
+  if (direct?.length) return direct[0];
+  const found = [...new Set((fragments.match(ADDRESS) ?? []).map((a) => a.toLowerCase()))];
+  if (found.length === 1) return found[0];
+  const words = task.toLowerCase().match(/[a-z]{3,}/g) ?? [];
+  return found.find((a) => words.some((w) => a.split("@")[0].includes(w))) ?? "";
+}
+
 /** The Draft Email mode already wrote the email: offer to send exactly that, to whoever the task names. */
-function emailFromDraft(task: string, response: string): Proposal {
+function emailFromDraft(task: string, response: string, fragments: string): Proposal {
   const lines = stripMarkup(response).split("\n");
   const at = lines.findIndex((l) => /^\s*subject\s*:/i.test(l));
   const subject = at >= 0 ? lines[at].replace(/^\s*subject\s*:\s*/i, "").trim() : "";
   const body = (at >= 0 ? lines.slice(at + 1) : lines).join("\n").trim();
-  const to = `${task}\n${response}`.match(/[^\s@<>(),;:"']+@[^\s@<>(),;:"']+\.[a-z]{2,}/i)?.[0] ?? "";
+  const to = recipient(task, response, fragments);
   return {
     kind: "send_email",
     title: subject ? `Send “${subject.slice(0, 80)}”` : "Send this email",
@@ -65,12 +80,21 @@ export async function POST(request: Request) {
   const { data: existing } = await supabase.from("actions").select(COLUMNS).eq("ask_id", askId).order("created_at");
   if (existing?.length) return NextResponse.json({ actions: existing });
 
-  const { data: ask } = await supabase.from("asks").select("id, task, mode, response").eq("id", askId).maybeSingle();
+  const { data: ask } = await supabase
+    .from("asks")
+    .select("id, task, mode, response, used_capture_ids")
+    .eq("id", askId)
+    .maybeSingle();
   if (!ask?.response) return fail(404, "bad-ask", "That hand-off isn’t in your history.");
 
   const proposals: Proposal[] = [];
   if (ask.mode === "Draft Email") {
-    proposals.push(emailFromDraft(ask.task, ask.response));
+    const used = (ask.used_capture_ids as string[] | null) ?? [];
+    const { data: sources } = used.length
+      ? await supabase.from("captures").select("raw_content, summary").in("id", used)
+      : { data: [] };
+    const fragments = (sources ?? []).map((s) => `${s.summary}\n${s.raw_content}`).join("\n");
+    proposals.push(emailFromDraft(ask.task, ask.response, fragments));
   } else if (aiConfigured()) {
     const today = new Date().toLocaleDateString("en-GB", {
       timeZone: timezone,
