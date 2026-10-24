@@ -85,8 +85,12 @@ afterwards, so `/stats` starts at zero. Email sign-up is switched off in Supabas
     API above 10 MB) or Groq Whisper when `GROQ_API_KEY` is set → `video`/`audio` fragment, original playable in the
     Vault, file deleted with the fragment. 13 s MP4: 11 s; 41.7 MB MP4: 32 s; voice note: 8 s; a hand-off then
     cited both. Migration `20261024120000_media_captures.sql`.
-  - Reels: TikTok's oEmbed caption and openly served Open Graph tags only. Instagram's terms forbid automated
-    collection, so Instagram links ask for the video file (verified: honest prompt in 2 s).
+  - Reels: Instagram, TikTok and Facebook links go through Supadata (`SUPADATA_API_KEY`: caption, author, length
+    and a speech transcript); Nexus never fetches Instagram or Facebook pages itself. Without the key, or for a
+    private reel, the recovery card says why and offers "Upload the video instead". TikTok's own oEmbed is tried
+    too, but TikTok is blocked in India, so from Vercel's Mumbai region (and Indian users) only Supadata works.
+  - Groq (`GROQ_API_KEY`, Production): voice notes are transcribed by Whisper first (verified in the logs:
+    "transcribed audio with groq", 8 s); Groq also backs Gemini up for videos up to 25 MB.
 
 ## Not built (spec §9 roadmap)
 WhatsApp, Instagram link transcription (needs a separate worker or a paid API), Chrome extension, OCR,
