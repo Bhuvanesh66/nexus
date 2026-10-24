@@ -435,6 +435,12 @@ export function DropPanel({
                 >
                   Save with my text
                 </button>
+                {link && ["video", "youtube"].includes(detectType(link)) ? (
+                  // The link stays in the box as the note, so the fragment remembers where the video came from.
+                  <button type="button" className={styles.quiet} onClick={() => picker.current?.click()}>
+                    Upload the video instead
+                  </button>
+                ) : null}
                 <button type="button" className={styles.quiet} onClick={() => setState({ kind: "idle" })}>
                   Cancel
                 </button>

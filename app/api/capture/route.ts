@@ -15,7 +15,8 @@ import { fetchArticle } from "@/lib/ingest/article";
 import { basicSummary } from "@/lib/ingest/basic";
 import { detectType, isPublicHost, normalizeUrl, parseLink, youtubeId } from "@/lib/ingest/detect";
 import { fetchPost } from "@/lib/ingest/post";
-import { fetchReel } from "@/lib/ingest/reel";
+import { tiktokCaption } from "@/lib/ingest/reel";
+import { supadataConfigured, supadataReel } from "@/lib/ingest/supadata";
 import { youtubeMeta, youtubeTranscript } from "@/lib/ingest/youtube";
 import { connectionsPrompt, summarisePrompt } from "@/lib/prompts";
 import { getSession } from "@/lib/supabase/server";
@@ -190,26 +191,41 @@ export async function POST(request: Request) {
     } else if (pasted) {
       raw = `Saved from ${sourceUrl}\n\n${pasted}`;
     } else if (type === "video") {
-      // Reels and short videos: transcribe the video when the platform shares it, otherwise keep the caption.
-      const reel = await fetchReel(sourceUrl);
-      let transcript: string | null = null;
-      if (reel?.video && transcriptionConfigured()) {
-        transcript = await transcribe({ kind: "file", bytes: reel.video.bytes, mime: reel.video.mime, name: "reel.mp4" }).catch(
-          () => null,
-        );
-      }
-      if (!reel || (!transcript && !reel.caption)) {
+      // Reels and short videos (Instagram, TikTok, Facebook): caption and transcript through Supadata when it is
+      // configured; TikTok's own oEmbed caption otherwise. Nexus never fetches Instagram or Facebook pages itself.
+      const isTikTok = /(^|\.)tiktok\.com$/.test(link.hostname);
+      const [found, tiktok] = await Promise.all([
+        supadataConfigured() ? supadataReel(sourceUrl) : Promise.resolve(null),
+        isTikTok ? tiktokCaption(sourceUrl) : Promise.resolve(null),
+      ]);
+      const platform = isTikTok ? "TikTok" : /instagram\.com$/.test(link.hostname) ? "Instagram" : "Facebook";
+      const caption = found?.caption ?? tiktok?.caption ?? null;
+      const transcript = found?.transcript ?? null;
+      if (!caption && !transcript) {
         return fail(
           422,
           "blocked",
-          "This app doesn’t share its videos with Nexus. Save the video to your phone and drop the file here (Nexus transcribes it), or paste what it says.",
+          found?.problem === "private"
+            ? "This reel is private or needs a login, so Nexus can’t open it. Save the video and drop the file here, or paste what it says."
+            : `${platform} doesn’t share its videos with apps directly. Save the video and drop the file here (Nexus transcribes it), or paste what it says.`,
         );
       }
-      titleHint = reel.title;
-      raw = `${reel.title}\n\n${reel.caption ? `Caption: ${reel.caption}\n\n` : ""}${transcript ?? ""}`.trim();
+      const by = found?.author ? ` by ${found.author}` : "";
+      const title = found?.title || tiktok?.title || `${platform} reel${by}`;
+      titleHint = title.length > 90 && caption ? `${platform} reel${by}` : title;
+      raw = [
+        `${platform} reel${by}${found?.durationSeconds ? ` (${Math.round(found.durationSeconds)} s)` : ""}`,
+        caption ? `Caption:\n${caption}` : null,
+        transcript ? `Transcript:\n${transcript}` : null,
+      ]
+        .filter(Boolean)
+        .join("\n\n");
       if (!transcript) {
-        type = "url";
-        notices.push("The platform shared only the caption, so that’s what Nexus saved. Drop the video file for a full transcript.");
+        notices.push(
+          found?.problem === "no-speech"
+            ? "No speech in this reel, so Nexus saved its caption."
+            : "Nexus saved the caption; drop the video file too if you want what’s said in it.",
+        );
       }
     } else if (type === "tweet") {
       const post = await fetchPost(sourceUrl);
