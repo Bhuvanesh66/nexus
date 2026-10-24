@@ -227,14 +227,19 @@ export async function transcribe(source: MediaSource, signal?: AbortSignal): Pro
   let lastError: unknown = null;
   for (const provider of audio ? ["groq", "gemini"] : ["gemini", "groq"]) {
     try {
-      if (provider === "gemini" && process.env.GEMINI_API_KEY) return await geminiTranscribe(source, audio, abort);
-      if (
+      let text: string | null = null;
+      if (provider === "gemini" && process.env.GEMINI_API_KEY) text = await geminiTranscribe(source, audio, abort);
+      else if (
         provider === "groq" &&
         process.env.GROQ_API_KEY &&
         source.kind === "file" &&
         source.bytes.byteLength <= GROQ_MAX_BYTES
       ) {
-        return await groqTranscribe(source, abort);
+        text = await groqTranscribe(source, abort);
+      }
+      if (text) {
+        console.info(`transcribed ${audio ? "audio" : source.kind === "youtube" ? "a YouTube video" : "video"} with ${provider}`);
+        return text;
       }
     } catch (error) {
       lastError = error;
